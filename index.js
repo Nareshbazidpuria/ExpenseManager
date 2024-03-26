@@ -22,6 +22,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 keepAlive();
 
+app.get("/", (i, o) => o.send("Hello"));
 app.use("/api", apiRouter);
 
 // app.use((err, req, res, next) => {
