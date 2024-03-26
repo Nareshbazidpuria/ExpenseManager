@@ -7,6 +7,7 @@ const path = require("path");
 const { ValidationError } = require("express-validation");
 const { connectDatabase } = require("./config/db");
 const { apiRouter } = require("./src/routes/api");
+const { keepAlive } = require("./src/utils/cron");
 // const {
 //   validationErrorMessageConverter,
 //   responseMethod,
@@ -18,6 +19,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+
+keepAlive();
 
 app.use("/api", apiRouter);
 
