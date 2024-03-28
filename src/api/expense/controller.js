@@ -1,5 +1,5 @@
 import moment from "moment";
-import { addExpenseDB, expenseListDB, totalTeamDB } from "./query";
+import { addExpenseDB, expenseListDB, totalOwnDB, totalTeamDB } from "./query";
 import { expenseTypes } from "../../../config/constant";
 import { ObjectId } from "mongodb";
 
@@ -52,6 +52,26 @@ export const totalTeam = async (req, res) => {
           new ObjectId(req.headers.user)
         )
       )?.[0],
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+export const totalOwn = async (req, res) => {
+  try {
+    const date = req.query.date || new Date();
+    return res.status(200).send({
+      data: await totalOwnDB(
+        {
+          createdAt: {
+            $gt: new Date(moment(date).startOf("month")),
+            $lte: new Date(moment(date).endOf("month")),
+          },
+        },
+        new ObjectId(req.headers.user)
+      ),
     });
   } catch (error) {
     console.log(error);

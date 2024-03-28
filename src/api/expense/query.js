@@ -130,3 +130,29 @@ export const totalTeamDB = (filter, auth) =>
       },
     },
   ]);
+
+export const totalOwnDB = (filter, auth) =>
+  Expense.aggregate([
+    {
+      $match: {
+        ...filter,
+        user: auth,
+        to: expenseTypes.own,
+      },
+    },
+    {
+      $group: {
+        _id: "$purpose",
+        amount: {
+          $sum: {
+            $ifNull: ["$amount", 0],
+          },
+        },
+      },
+    },
+    {
+      $sort: {
+        amount: -1,
+      },
+    },
+  ]);
