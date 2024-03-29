@@ -2,13 +2,30 @@ import moment from "moment";
 import { addExpenseDB, expenseListDB, totalOwnDB, totalTeamDB } from "./query";
 import { expenseTypes } from "../../../config/constant";
 import { ObjectId } from "mongodb";
+import { sendNotification } from "../../utils/push";
+import { getExpoTokensDB, getUserDB } from "../user/query";
 
 export const addExpense = async (req, res) => {
   try {
     if (req.body.purpose === "Write your own ...")
       req.body = { ...req.body, purpose: req.body.additional };
-    if (await addExpenseDB({ ...req.body, user: req.headers.user }))
+    if (await addExpenseDB({ ...req.body, user: req.headers.user })) {
+      if (req.body.to === expenseTypes.team) {
+        const to = (await getExpoTokensDB(new ObjectId(req.headers.user)))?.[0]
+            ?.tokens,
+          by = await getUserDB({ _id: req.headers.user });
+        if (to?.length && by)
+          await sendNotification({
+            to,
+            title: by.name + " has added an item to the team expenses",
+            body: `${req.body.purpose || req.body.additional}, ₹${
+              req.body.amount
+            }`,
+            sound: "default",
+          });
+      }
       return res.status(201).send({ message: "Data saved !" });
+    }
     return res.status(400).send({ message: "Unable to save your data !" });
   } catch (error) {
     console.log(error);

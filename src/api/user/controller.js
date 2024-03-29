@@ -4,6 +4,7 @@ import { expenseTypes } from "../../../config/constant";
 
 export const login = async (req, res) => {
   try {
+    console.log(req.body);
     if (req.body.changePass) {
       const user = await editUserDB(
         { name: req.body.name },
@@ -11,7 +12,17 @@ export const login = async (req, res) => {
       );
       return res.status(200).send({ user });
     }
-    const user = await getUserDB(req.body);
+    const user = await editUserDB(
+      {
+        name: req.body.name,
+        password: req.body.password,
+      },
+      req.body
+    );
+    // const user = await getUserDB({
+    //   name: req.body.name,
+    //   password: req.body.password,
+    // });
     if (user)
       return res.status(200).send({
         user,

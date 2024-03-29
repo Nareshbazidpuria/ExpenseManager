@@ -6,6 +6,7 @@ export const User = model(
     {
       name: String,
       password: String,
+      expoToken: String,
     },
     { timestamps: true }
   )
