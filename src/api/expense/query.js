@@ -3,6 +3,8 @@ import { Expense } from "./model";
 
 export const addExpenseDB = (data) => Expense.create(data);
 
+export const deleteExpenseDB = (filter) => Expense.findOneAndDelete(filter);
+
 export const expenseListDB = (filter) =>
   Expense.aggregate([
     {

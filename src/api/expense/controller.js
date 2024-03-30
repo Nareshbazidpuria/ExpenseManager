@@ -1,5 +1,11 @@
 import moment from "moment";
-import { addExpenseDB, expenseListDB, totalOwnDB, totalTeamDB } from "./query";
+import {
+  addExpenseDB,
+  deleteExpenseDB,
+  expenseListDB,
+  totalOwnDB,
+  totalTeamDB,
+} from "./query";
 import { expenseTypes } from "../../../config/constant";
 import { ObjectId } from "mongodb";
 // import { sendNotification } from "../../utils/push";
@@ -48,6 +54,17 @@ export const expenseList = async (req, res) => {
     return res.status(200).send({
       data: await expenseListDB(filter),
     });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+export const deleteExpense = async (req, res) => {
+  try {
+    if (await deleteExpenseDB({ ...req.body, user: req.headers.user }))
+      return res.status(200).send({ message: "Expense Deleted" });
+    return res.status(400).send({ message: "Unable to delete !" });
   } catch (error) {
     console.log(error);
     return res.status(500).send({ message: "Something went wrong" });
