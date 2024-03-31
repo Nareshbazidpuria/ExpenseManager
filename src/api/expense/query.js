@@ -1,3 +1,4 @@
+import momentTz from "moment-timezone";
 import { expenseTypes } from "../../../config/constant";
 import { Expense } from "./model";
 
@@ -38,11 +39,14 @@ export const expenseListDB = (filter) =>
     },
   ]);
 
-export const totalTeamDB = (filter, auth) =>
+export const totalTeamDB = (date, auth) =>
   Expense.aggregate([
     {
       $match: {
-        ...filter,
+        createdAt: {
+          $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+          $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+        },
         to: expenseTypes.team,
       },
     },
@@ -133,11 +137,14 @@ export const totalTeamDB = (filter, auth) =>
     },
   ]);
 
-export const totalOwnDB = (filter, auth) =>
+export const totalOwnDB = (date, auth) =>
   Expense.aggregate([
     {
       $match: {
-        ...filter,
+        createdAt: {
+          $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+          $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+        },
         user: auth,
         to: expenseTypes.own,
       },
@@ -155,6 +162,130 @@ export const totalOwnDB = (filter, auth) =>
     {
       $sort: {
         amount: -1,
+      },
+    },
+  ]);
+
+export const individualDB = (date, auth) =>
+  Expense.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+          $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+        },
+        $or: [{ user: auth }, { to: auth?.toString() }],
+        to: { $nin: [expenseTypes.team, expenseTypes.own] },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $cond: [
+            {
+              $eq: ["$user", auth],
+            },
+            {
+              user: {
+                $toString: "$user",
+              },
+              to: "$to",
+            },
+            {
+              user: "$to",
+              to: {
+                $toString: "$user",
+              },
+            },
+          ],
+        },
+        me: {
+          $push: {
+            $cond: [
+              {
+                $eq: ["$user", auth],
+              },
+              {
+                purpose: "$purpose",
+                amount: {
+                  $ifNull: ["$amount", 0],
+                },
+              },
+              "$$REMOVE",
+            ],
+          },
+        },
+        you: {
+          $push: {
+            $cond: [
+              {
+                $ne: ["$user", auth],
+              },
+              {
+                purpose: "$purpose",
+                amount: {
+                  $ifNull: ["$amount", 0],
+                },
+              },
+              "$$REMOVE",
+            ],
+          },
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: { id: "$_id.to" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: [
+                  {
+                    $toString: "$_id",
+                  },
+                  "$$id",
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+            },
+          },
+        ],
+        as: "to",
+      },
+    },
+    {
+      $unwind: "$to",
+    },
+    {
+      $project: {
+        _id: 0,
+        to: 1,
+        me: 1,
+        you: 1,
+        total: {
+          $subtract: [
+            {
+              $reduce: {
+                input: "$me.amount",
+                initialValue: 0,
+                in: { $sum: ["$$value", "$$this"] },
+              },
+            },
+            {
+              $reduce: {
+                input: "$you.amount",
+                initialValue: 0,
+                in: { $sum: ["$$value", "$$this"] },
+              },
+            },
+          ],
+        },
       },
     },
   ]);

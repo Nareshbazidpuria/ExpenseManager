@@ -3,11 +3,13 @@ import {
   addExpenseDB,
   deleteExpenseDB,
   expenseListDB,
+  individualDB,
   totalOwnDB,
   totalTeamDB,
 } from "./query";
 import { expenseTypes } from "../../../config/constant";
 import { ObjectId } from "mongodb";
+import { getUserDB } from "../user/query";
 // import { sendNotification } from "../../utils/push";
 // import { getExpoTokensDB, getUserDB } from "../user/query";
 
@@ -15,6 +17,8 @@ export const addExpense = async (req, res) => {
   try {
     if (req.body.purpose === "Write your own ...")
       req.body = { ...req.body, purpose: req.body.additional };
+    if (!Object.values(expenseTypes).includes(req.body.to))
+      req.body.to = (await getUserDB({ name: req.body.to }))?._id;
     if (await addExpenseDB({ ...req.body, user: req.headers.user })) {
       // if (req.body.to === expenseTypes.team) {
       //   const to = (await getExpoTokensDB(new ObjectId(req.headers.user)))?.[0]
@@ -75,17 +79,7 @@ export const totalTeam = async (req, res) => {
   try {
     const date = req.query.date || new Date();
     return res.status(200).send({
-      data: (
-        await totalTeamDB(
-          {
-            createdAt: {
-              $gt: new Date(moment(date).startOf("month")),
-              $lte: new Date(moment(date).endOf("month")),
-            },
-          },
-          new ObjectId(req.headers.user)
-        )
-      )?.[0],
+      data: (await totalTeamDB(date, new ObjectId(req.headers.user)))?.[0],
     });
   } catch (error) {
     console.log(error);
@@ -97,15 +91,19 @@ export const totalOwn = async (req, res) => {
   try {
     const date = req.query.date || new Date();
     return res.status(200).send({
-      data: await totalOwnDB(
-        {
-          createdAt: {
-            $gt: new Date(moment(date).startOf("month")),
-            $lte: new Date(moment(date).endOf("month")),
-          },
-        },
-        new ObjectId(req.headers.user)
-      ),
+      data: await totalOwnDB(date, new ObjectId(req.headers.user)),
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+export const individual = async (req, res) => {
+  try {
+    const date = req.query.date || new Date();
+    return res.status(200).send({
+      data: await individualDB(date, new ObjectId(req.headers.user)),
     });
   } catch (error) {
     console.log(error);
