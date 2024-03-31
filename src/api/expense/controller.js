@@ -1,4 +1,4 @@
-import moment from "moment";
+import moment from "moment-timezone";
 import {
   addExpenseDB,
   deleteExpenseDB,
@@ -48,8 +48,8 @@ export const expenseList = async (req, res) => {
     const date = req.query.date || new Date();
     const filter = {
       createdAt: {
-        $gt: new Date(moment(date).startOf("month")),
-        $lte: new Date(moment(date).endOf("month")),
+        $gt: new Date(moment(date).tz("Asia/Kolkata").startOf("month")),
+        $lte: new Date(moment(date).tz("Asia/Kolkata").endOf("month")),
       },
       to: req.query.to || expenseTypes.team,
     };
