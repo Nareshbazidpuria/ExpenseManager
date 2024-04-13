@@ -210,6 +210,8 @@ export const individualDB = (date, auth) =>
               },
               {
                 purpose: "$purpose",
+                _id: "$_id",
+                edited: "$edited",
                 createdAt: "$createdAt",
                 amount: {
                   $ifNull: ["$amount", 0],
@@ -227,6 +229,8 @@ export const individualDB = (date, auth) =>
               },
               {
                 createdAt: "$createdAt",
+                _id: "$_id",
+                edited: "$edited",
                 purpose: "$purpose",
                 amount: {
                   $ifNull: ["$amount", 0],
