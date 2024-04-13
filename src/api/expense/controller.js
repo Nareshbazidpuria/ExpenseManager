@@ -85,7 +85,7 @@ export const editExpense = async (req, res) => {
     if (
       await editExpenseDB(
         { _id: req.params.id },
-        { ...req.body, user: req.headers.user, edited: true }
+        { ...req.body, user: req.headers?.user, edited: true }
       )
     )
       return res.status(201).send({ message: "Expense updated" });
