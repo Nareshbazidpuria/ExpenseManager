@@ -2,6 +2,7 @@ import moment from "moment-timezone";
 import {
   addExpenseDB,
   deleteExpenseDB,
+  editExpenseDB,
   expenseListDB,
   individualDB,
   totalOwnDB,
@@ -66,9 +67,29 @@ export const expenseList = async (req, res) => {
 
 export const deleteExpense = async (req, res) => {
   try {
-    if (await deleteExpenseDB({ ...req.body, user: req.headers.user }))
+    if (await deleteExpenseDB({ _id: req.params.id, user: req.headers.user }))
       return res.status(200).send({ message: "Expense Deleted" });
     return res.status(400).send({ message: "Unable to delete !" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+export const editExpense = async (req, res) => {
+  try {
+    if (req.body.purpose === "Write your own ...")
+      req.body = { ...req.body, purpose: req.body.additional };
+    if (!Object.values(expenseTypes).includes(req.body.to))
+      req.body.to = (await getUserDB({ name: req.body.to }))?._id;
+    if (
+      await editExpenseDB(
+        { _id: req.params.id },
+        { ...req.body, user: req.headers.user, edited: true }
+      )
+    )
+      return res.status(201).send({ message: "Expense updated" });
+    return res.status(400).send({ message: "Unable to save your data !" });
   } catch (error) {
     console.log(error);
     return res.status(500).send({ message: "Something went wrong" });

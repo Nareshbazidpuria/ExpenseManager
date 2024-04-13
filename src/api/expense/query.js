@@ -4,6 +4,9 @@ import { Expense } from "./model";
 
 export const addExpenseDB = (data) => Expense.create(data);
 
+export const editExpenseDB = (filter, data) =>
+  Expense.findOneAndUpdate(filter, data, { new: true });
+
 export const deleteExpenseDB = (filter) => Expense.findOneAndDelete(filter);
 
 export const expenseListDB = (filter) =>

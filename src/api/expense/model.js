@@ -10,6 +10,10 @@ export const Expense = model(
       purpose: String,
       additional: String,
       to: String,
+      edited: {
+        type: Boolean,
+        default: false,
+      },
     },
     { timestamps: true }
   )

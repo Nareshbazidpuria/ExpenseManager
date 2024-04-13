@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addExpense,
   deleteExpense,
+  editExpense,
   expenseList,
   individual,
   totalOwn,
@@ -10,7 +11,8 @@ import {
 
 export const expenseRouter = Router();
 
-expenseRouter.route("/").post(addExpense).get(expenseList).put(deleteExpense);
+expenseRouter.route("/").post(addExpense).get(expenseList);
 expenseRouter.route("/team").get(totalTeam);
 expenseRouter.route("/own").get(totalOwn);
 expenseRouter.route("/individual").get(individual);
+expenseRouter.route("/:id").delete(deleteExpense).put(editExpense);
