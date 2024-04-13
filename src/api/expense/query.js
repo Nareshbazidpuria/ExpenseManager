@@ -207,6 +207,7 @@ export const individualDB = (date, auth) =>
               },
               {
                 purpose: "$purpose",
+                createdAt: "$createdAt",
                 amount: {
                   $ifNull: ["$amount", 0],
                 },
@@ -222,6 +223,7 @@ export const individualDB = (date, auth) =>
                 $ne: ["$user", auth],
               },
               {
+                createdAt: "$createdAt",
                 purpose: "$purpose",
                 amount: {
                   $ifNull: ["$amount", 0],
