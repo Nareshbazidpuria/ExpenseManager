@@ -4,7 +4,6 @@ import { expenseTypes } from "../../../config/constant";
 
 export const login = async (req, res) => {
   try {
-    console.log(req.body);
     if (req.body.changePass) {
       const user = await editUserDB(
         { name: req.body.name },

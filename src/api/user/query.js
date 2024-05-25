@@ -1,5 +1,6 @@
 import { User } from "./model";
 
+export const addUserDB = (user) => User.create(user);
 export const getUserDB = (filter) => User.findOne(filter);
 
 export const editUserDB = (filter, updation) =>
