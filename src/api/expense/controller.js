@@ -18,7 +18,10 @@ export const addExpense = async (req, res) => {
   try {
     if (req.body.purpose === "Write your own ...")
       req.body = { ...req.body, purpose: req.body.additional };
-    if (!Object.values(expenseTypes).includes(req.body.to))
+    if (
+      !Object.values(expenseTypes).includes(req.body.to) &&
+      !ObjectId.isValid(req.body.to)
+    )
       req.body.to = (await getUserDB({ name: req.body.to }))?._id;
     if (await addExpenseDB({ ...req.body, user: req.headers.user })) {
       // if (req.body.to === expenseTypes.team) {
@@ -100,7 +103,9 @@ export const totalTeam = async (req, res) => {
   try {
     const date = req.query.date || new Date();
     return res.status(200).send({
-      data: (await totalTeamDB(date, new ObjectId(req.headers.user)))?.[0],
+      data: (
+        await totalTeamDB(date, new ObjectId(req.headers.user), req.query.to)
+      )?.[0],
     });
   } catch (error) {
     console.log(error);

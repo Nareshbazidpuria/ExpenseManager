@@ -4,7 +4,6 @@ import { expenseTypes } from "../../../config/constant";
 
 export const login = async (req, res) => {
   try {
-    console.log(req.body);
     if (req.body.changePass) {
       const user = await editUserDB(
         { name: req.body.name },
@@ -26,7 +25,9 @@ export const login = async (req, res) => {
     if (user)
       return res.status(200).send({
         user,
-        changePass: ["sanjay", "dharam"].includes(req.body.password),
+        changePass: ["sanjay", "bishtt", "shergill"].includes(
+          req.body.password
+        ),
       });
     return res.status(400).send({ message: "Invalid credentials !" });
   } catch (error) {

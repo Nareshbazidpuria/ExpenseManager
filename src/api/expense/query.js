@@ -1,6 +1,7 @@
 import momentTz from "moment-timezone";
 import { expenseTypes } from "../../../config/constant";
 import { Expense } from "./model";
+import { ObjectId } from "mongodb";
 
 export const addExpenseDB = (data) => Expense.create(data);
 
@@ -42,7 +43,7 @@ export const expenseListDB = (filter) =>
     },
   ]);
 
-export const totalTeamDB = (date, auth) =>
+export const totalTeamDB = (date, auth, to) =>
   Expense.aggregate([
     {
       $match: {
@@ -50,7 +51,7 @@ export const totalTeamDB = (date, auth) =>
           $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
           $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
         },
-        to: expenseTypes.team,
+        to,
       },
     },
     {
@@ -106,8 +107,26 @@ export const totalTeamDB = (date, auth) =>
       },
     },
     {
+      $lookup: {
+        from: "groups",
+        pipeline: [
+          {
+            $match: {
+              _id: new ObjectId(to),
+            },
+          },
+        ],
+        as: "divideBy",
+      },
+    },
+    {
+      $unwind: "$divideBy",
+    },
+    {
       $set: {
-        third: { $divide: ["$total", 3] },
+        third: {
+          $divide: ["$total", { $ifNull: [{ $size: "$divideBy.members" }, 3] }],
+        },
         you: {
           $arrayElemAt: [
             {
