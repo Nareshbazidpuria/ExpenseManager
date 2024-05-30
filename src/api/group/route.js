@@ -1,6 +1,11 @@
 import { Router } from "express";
-import { groupList } from "./controller";
+import { createGroup, groupList } from "./controller";
+import { validate } from "express-validation";
+import { createGroupJoi } from "./joi";
 
 export const groupRouter = Router();
 
-groupRouter.route("/").get(groupList);
+groupRouter
+  .route("/")
+  .post(validate(createGroupJoi), createGroup)
+  .get(groupList);

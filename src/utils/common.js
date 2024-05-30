@@ -7,7 +7,7 @@ export const rm = (res, message, data = {}, status = 200) =>
     data,
   });
 
-export const badReq = (res, message = rMsg.BAD_REQUEST) =>
+export const badReq = (res, message = "Something went wrong") =>
   res?.status(400)?.send({ message });
 
 export const conflict = (res, message) => res?.status(409)?.send({ message });

@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { login } from "./controller";
+import { getMember } from "./controller";
+import { validate } from "express-validation";
+import { getMemberJoi } from "./joi";
 
 export const userRouter = Router();
 
-userRouter.route("/").post(login);
+userRouter.route("/").get(validate(getMemberJoi), getMember);

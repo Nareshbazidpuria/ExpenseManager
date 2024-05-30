@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { login, signUp } from "../api/auth/controller";
 import { validate } from "express-validation";
-import { loginJoi, signUpJoi } from "../api/auth/validation";
+import { loginJoi, signUpJoi } from "../api/auth/joi";
 
 export const pubRoutes = Router();
 

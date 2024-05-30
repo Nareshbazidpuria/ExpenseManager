@@ -40,6 +40,7 @@ export const rMsg = {
   OTP_SENT: "OTP sent successfully.",
   OTP_EXPIRED: "OTP expired. Please resend.",
   INVALID_OTP: "Invalid OTP.",
+  GROUP_CREATED: "Group has been created",
 };
 
 export const expenseTypes = {
