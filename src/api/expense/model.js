@@ -7,9 +7,12 @@ export const Expense = model(
     {
       user: ObjectId,
       amount: Number,
-      purpose: String,
       additional: String,
       to: String,
+      purpose: {
+        type: String,
+        trim: true,
+      },
       edited: {
         type: Boolean,
         default: false,

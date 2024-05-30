@@ -30,12 +30,21 @@ export const login = handleExceptions(async (req, res) => {
     return badReq(res, rMsg.INCORRECT_PASSWORD);
   const accessToken = await generateToken({ userId: user._id });
   if (!(await loginDB({ userId: user._id, accessToken }))) return badReq(res);
-  return rm(res, rMsg.LOGIN_SUCCESS, { accessToken, name: user.name });
+  return rm(res, rMsg.LOGIN_SUCCESS, {
+    accessToken,
+    user: { name: user.name, _id: user._id },
+  });
 });
 
 export const logout = handleExceptions(async (req, res) => {
   if (!(await logoutDB({ accessToken: req.headers.token }))) return badReq(res);
   return rm(res, rMsg.LOGGED_OUT);
+});
+
+export const profile = handleExceptions(async (req, res) => {
+  const user = { ...req.auth._doc };
+  delete user.password;
+  return rm(res, "", user);
 });
 
 // // Todo

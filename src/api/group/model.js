@@ -6,6 +6,8 @@ export const Group = model(
   new Schema({
     name: String,
     sequence: Number,
+    admin: ObjectId,
+    category: String,
     members: [ObjectId],
   })
 );

@@ -1,41 +1,46 @@
 import { Group } from "./model";
 
+export const createGroupDB = (group) => Group.create(group);
+
 export const groupsDB = (filter) =>
   Group.aggregate([
     {
       $match: filter,
     },
     {
-      $unwind: "$members",
-    },
-    {
       $lookup: {
         from: "users",
-        localField: "members",
+        // let: { id: "$admin" },
+        // pipeline: [
+        //   {
+        //     $match: {
+        //       $expr: {
+        //         $eq: ["$_id", "$$id"],
+        //       },
+        //     },
+        //   },
+        //   {
+        //     $project: {
+        //       name: 1,
+        //     },
+        //   },
+        // ],
+        localField: "admin",
         foreignField: "_id",
-        as: "members",
+        as: "admin",
       },
     },
     {
-      $unwind: "$members",
+      $unwind: "$admin",
     },
     {
-      $group: {
-        _id: "$_id",
-        name: {
-          $first: "$name",
-        },
-        sequence: {
-          $first: "$sequence",
-        },
-        members: {
-          $push: "$members.name",
-        },
+      $set: {
+        admin: "$admin.name",
       },
     },
     {
       $sort: {
-        sequence: 1,
+        createdAt: -1,
       },
     },
   ]);
