@@ -4,6 +4,7 @@ import {
   deleteExpenseDB,
   editExpenseDB,
   expenseListDB,
+  getExpenseDB,
   individualDB,
   totalOwnDB,
   totalTeamDB,
@@ -12,6 +13,7 @@ import { expenseTypes } from "../../../config/constant";
 import { ObjectId } from "mongodb";
 import { getUserDB } from "../user/query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
+import { addNotificationDB } from "../notifications/query";
 // import { sendNotification } from "../../utils/push";
 // import { getExpoTokensDB, getUserDB } from "../user/query";
 
@@ -49,13 +51,22 @@ export const editExpense = async (req, res) => {
       req.body = { ...req.body, purpose: req.body.additional };
     if (!Object.values(expenseTypes).includes(req.body.to))
       req.body.to = (await getUserDB({ name: req.body.to }))?._id;
-    if (
-      await editExpenseDB(
+    const prev = await getExpenseDB({ _id: req.params.id }),
+      edited = await editExpenseDB(
         { _id: req.params.id },
         { ...req.body, user: req.auth._id, edited: true }
-      )
-    )
+      );
+    if (edited) {
+      await addNotificationDB({
+        user: req.auth._id,
+        group: edited.to,
+        amount: edited.amount,
+        purpose: edited.purpose,
+        prevAmount: prev.amount,
+        prevPurpose: prev.purpose,
+      });
       return res.status(201).send({ message: "Expense updated" });
+    }
     return res.status(400).send({ message: "Unable to save your data !" });
   } catch (error) {
     console.log(error);

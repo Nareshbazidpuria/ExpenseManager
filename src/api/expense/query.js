@@ -4,6 +4,7 @@ import { Expense } from "./model";
 import { ObjectId } from "mongodb";
 
 export const addExpenseDB = (data) => Expense.create(data);
+export const getExpenseDB = (filter) => Expense.findOne(filter);
 
 export const editExpenseDB = (filter, data) =>
   Expense.findOneAndUpdate(filter, data, { new: true });
