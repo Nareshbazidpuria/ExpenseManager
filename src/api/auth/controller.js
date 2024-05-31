@@ -15,7 +15,7 @@ import { logoutDB, loginDB } from "./query";
 import { rMsg } from "../../../config/constant";
 
 export const signUp = handleExceptions(async (req, res) => {
-  if (await getUserDB({ email: req.body.email.trim() }))
+  if (await getUserDB({ email: req.body.email.trim()?.toLowerCase() }))
     return conflict(res, rMsg.USER_EXIST);
   req.body.password = await hashPassword(req.body.password?.trim());
   req.body.secretCode = await genSecretCode();
@@ -24,7 +24,7 @@ export const signUp = handleExceptions(async (req, res) => {
 });
 
 export const login = handleExceptions(async (req, res) => {
-  const user = await getUserDB({ email: req.body.email.trim() });
+  const user = await getUserDB({ email: req.body.email.trim()?.toLowerCase() });
   if (!user) return badReq(res, rMsg.USER_NOT_FOUND);
   if (!(await comparePassword(req.body.password, user.password)))
     return badReq(res, rMsg.INCORRECT_PASSWORD);

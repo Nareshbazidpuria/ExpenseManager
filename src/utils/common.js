@@ -36,6 +36,7 @@ export const randomString = () =>
 
 export const genSecretCode = async () => {
   const secretCode = Math.random().toString(36).slice(2).toUpperCase();
+  if (secretCode?.length !== 11) return genSecretCode();
   if (await getUserDB({ secretCode })) return genSecretCode();
   return secretCode;
 };
