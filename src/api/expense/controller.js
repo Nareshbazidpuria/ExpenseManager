@@ -6,6 +6,7 @@ import {
   expenseListDB,
   getExpenseDB,
   individualDB,
+  totalExpensesDB,
   totalOwnDB,
   totalTeamDB,
 } from "./query";
@@ -18,10 +19,21 @@ import { addNotificationDB } from "../notifications/query";
 // import { getExpoTokensDB, getUserDB } from "../user/query";
 
 export const addExpense = handleExceptions(async (req, res) => {
-  const { additional, purpose } = req.body;
+  const { additional, purpose } = req.body,
+    { _id, monthlyLimit } = req.auth;
   if (purpose === "Write your own ...") req.body.purpose = additional;
-  const added = await addExpenseDB({ ...req.body, user: req.auth._id });
-  if (added) return rm(res, "Expense added", {}, 201);
+  const added = await addExpenseDB({ ...req.body, user: _id });
+  if (added) {
+    const data = {};
+    if (monthlyLimit) {
+      const totalExpenses =
+        (await totalExpensesDB(new Date(), _id))?.[0]?.amount || 0;
+      if (totalExpenses > monthlyLimit)
+        data.message =
+          "You have crossed your monthly expense limit, spend carefully";
+    }
+    return rm(res, "Expense added", data, 201);
+  }
   return badReq(res, "Unable to save your data !");
 });
 

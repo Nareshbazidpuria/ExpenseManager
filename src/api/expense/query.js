@@ -318,3 +318,26 @@ export const individualDB = (date, auth) =>
       },
     },
   ]);
+
+export const totalExpensesDB = (date, user) =>
+  Expense.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+          $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+        },
+        user,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        amount: {
+          $sum: {
+            $ifNull: ["$amount", 0],
+          },
+        },
+      },
+    },
+  ]);

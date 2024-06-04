@@ -37,8 +37,8 @@ export const rMsg = {
   USER_NOT_FOUND: "There is no any account associated with this email.",
   INCORRECT_PASSWORD: "Incorrect password.",
   PASSWORD_CHANGED: "Password changed successfully.",
-  OTP_SENT: "OTP sent successfully.",
-  OTP_EXPIRED: "OTP expired. Please resend.",
+  OTP_SENT: "OTP sent to your registered email.",
+  OTP_EXPIRED: "OTP expired.",
   INVALID_OTP: "Invalid OTP.",
   GROUP_CREATED: "Group has been created",
 };
