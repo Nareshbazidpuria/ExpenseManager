@@ -8,6 +8,7 @@ export const User = model(
       password: String,
       secretCode: String,
       email: String,
+      monthlyLimit: Number,
     },
     { timestamps: true }
   )

@@ -60,7 +60,7 @@ export const toMsg = (res, err) =>
     : badReq(res, "Validation error");
 
 export const generateOtp = () => {
-  let otp = parseInt(Math.random() * 1000000);
+  const otp = parseInt(Math.random() * 1000000);
   return otp < 100000 ? generateOtp() : otp;
 };
 

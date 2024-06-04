@@ -38,9 +38,11 @@ import { badReq, handleExceptions, rm } from "../../utils/common";
 // };
 
 export const getMember = handleExceptions(async (req, res) => {
+  if (req.auth.secretCode === req.query.secretCode)
+    return badReq(res, "You cannot add yourself as a group member");
   const member = await getUserDB({ secretCode: req.query.secretCode });
   if (member) return rm(res, "", { name: member.name, _id: member._id });
-  badReq(res, "Invalid secret code");
+  return badReq(res, "Invalid secret code");
 });
 
 export const expenseList = async (req, res) => {
