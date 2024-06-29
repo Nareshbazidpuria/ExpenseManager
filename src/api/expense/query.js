@@ -160,6 +160,127 @@ export const totalTeamDB = (date, auth, to) =>
     },
   ]);
 
+export const totalPersonalDB = (date, auth, to) =>
+  Expense.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+          $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+        },
+        to,
+      },
+    },
+    {
+      $group: {
+        _id: "$user",
+        amount: {
+          $sum: {
+            $ifNull: ["$amount", 0],
+          },
+        },
+      },
+    },
+    {
+      $sort: {
+        amount: -1,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: {
+          id: "$_id",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ["$_id", "$$id"],
+              },
+            },
+          },
+        ],
+        as: "name",
+      },
+    },
+    {
+      $unwind: "$name",
+    },
+    {
+      $set: {
+        name: "$name.name",
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        members: {
+          $push: "$$ROOT",
+        },
+        total: {
+          $sum: "$amount",
+        },
+      },
+    },
+    // {
+    //   $lookup: {
+    //     from: "groups",
+    //     pipeline: [
+    //       {
+    //         $match: {
+    //           _id: new ObjectId(to),
+    //         },
+    //       },
+    //     ],
+    //     as: "divideBy",
+    //   },
+    // },
+    // {
+    //   $unwind: "$divideBy",
+    // },
+    {
+      $set: {
+        // third: {
+        //   $divide: ["$total", { $ifNull: [{ $size: "$divideBy.members" }, 3] }],
+        // },
+        you: {
+          $arrayElemAt: [
+            {
+              $ifNull: [
+                {
+                  $filter: {
+                    input: "$members",
+                    as: "you",
+                    cond: { $eq: ["$$you._id", auth] },
+                  },
+                },
+                [],
+              ],
+            },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $set: {
+        you: { $ifNull: ["$you.amount", 0] },
+        remaining: {
+          $subtract: [
+            { $ifNull: ["$you.amount", 0] },
+            {
+              $subtract: [
+                { $ifNull: ["$total", 0] },
+                { $ifNull: ["$you.amount", 0] },
+              ],
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
 export const totalOwnDB = (date, auth) =>
   Expense.aggregate([
     {

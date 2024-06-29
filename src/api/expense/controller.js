@@ -8,6 +8,7 @@ import {
   individualDB,
   totalExpensesDB,
   totalOwnDB,
+  totalPersonalDB,
   totalTeamDB,
 } from "./query";
 import { expenseTypes } from "../../../config/constant";
@@ -15,6 +16,7 @@ import { ObjectId } from "mongodb";
 import { getUserDB } from "../user/query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { addNotificationDB } from "../notifications/query";
+import { getGroupDB } from "../group/query";
 // import { sendNotification } from "../../utils/push";
 // import { getExpoTokensDB, getUserDB } from "../user/query";
 
@@ -87,8 +89,12 @@ export const editExpense = async (req, res) => {
 };
 
 export const totalTeam = handleExceptions(async (req, res) => {
-  const date = req.query.date || new Date(),
-    list = await totalTeamDB(date, new ObjectId(req.auth._id), req.query.to);
+  const { date = new Date(), to } = req.query;
+  const group = ObjectId.isValid(to) ? await getGroupDB({ _id: to }) : null;
+  const list =
+    group?.members?.length === 2
+      ? await totalPersonalDB(date, new ObjectId(req.auth._id), to)
+      : await totalTeamDB(date, new ObjectId(req.auth._id), to);
   return rm(res, "", list?.[0]);
 });
 
