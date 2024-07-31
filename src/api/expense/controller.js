@@ -24,7 +24,11 @@ export const addExpense = handleExceptions(async (req, res) => {
   const { additional, purpose } = req.body,
     { _id, monthlyLimit } = req.auth;
   if (purpose === "Write your own ...") req.body.purpose = additional;
-  const added = await addExpenseDB({ ...req.body, user: _id });
+  const added = await addExpenseDB({
+    ...req.body,
+    user: _id,
+    verifiedBy: [_id],
+  });
   if (added) {
     const data = {};
     if (monthlyLimit) {
@@ -43,13 +47,17 @@ export const expenseList = handleExceptions(async (req, res) => {
   const date = req.query.date || new Date(),
     filter = {
       createdAt: {
-        $gt: new Date(moment(date).tz("Asia/Kolkata").startOf("month")),
-        $lte: new Date(moment(date).tz("Asia/Kolkata").endOf("month")),
+        $gt: new Date(
+          moment(new Date(date)).tz("Asia/Kolkata").startOf("month")
+        ),
+        $lte: new Date(
+          moment(new Date(date)).tz("Asia/Kolkata").endOf("month")
+        ),
       },
       to: req.query.to || expenseTypes.team,
     };
   if (filter.to === expenseTypes.own) filter.user = new ObjectId(req.auth._id);
-  const list = await expenseListDB(filter);
+  const list = await expenseListDB(filter, filter.to === expenseTypes.own);
   return rm(res, "", list);
 });
 
@@ -71,17 +79,35 @@ export const editExpense = async (req, res) => {
         { ...req.body, user: req.auth._id, edited: true }
       );
     if (edited) {
-      await addNotificationDB({
-        user: req.auth._id,
-        group: edited.to,
-        amount: edited.amount,
-        purpose: edited.purpose,
-        prevAmount: prev.amount,
-        prevPurpose: prev.purpose,
-      });
+      if (req.body.to !== expenseTypes.own)
+        await addNotificationDB({
+          user: req.auth._id,
+          group: edited.to,
+          amount: edited.amount,
+          purpose: edited.purpose,
+          prevAmount: prev.amount,
+          prevPurpose: prev.purpose,
+        });
       return res.status(201).send({ message: "Expense updated" });
     }
     return res.status(400).send({ message: "Unable to save your data !" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+export const verifyExpense = async (req, res) => {
+  try {
+    const verified = await editExpenseDB(
+      { _id: req.params.id, user: { $ne: req.auth._id } },
+      { $addToSet: { verifiedBy: req.auth._id } }
+    );
+    if (verified)
+      return res
+        .status(200)
+        .send({ message: "Expense has been verified from your side" });
+    return res.status(400).send({ message: "Unable to verify this expense" });
   } catch (error) {
     console.log(error);
     return res.status(500).send({ message: "Something went wrong" });

@@ -11,7 +11,32 @@ export const editExpenseDB = (filter, data) =>
 
 export const deleteExpenseDB = (filter) => Expense.findOneAndDelete(filter);
 
-export const expenseListDB = (filter) =>
+const groupLookup = (own) =>
+  own
+    ? []
+    : [
+        {
+          $lookup: {
+            from: "groups",
+            let: { id: "$to" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: [{ $toString: "$_id" }, "$$id"],
+                  },
+                },
+              },
+            ],
+            as: "group",
+          },
+        },
+        {
+          $unwind: "$group",
+        },
+      ];
+
+export const expenseListDB = (filter, own) =>
   Expense.aggregate([
     {
       $match: filter,
@@ -35,12 +60,68 @@ export const expenseListDB = (filter) =>
               },
             },
           },
+          {
+            $project: {
+              name: 1,
+            },
+          },
         ],
         as: "user",
       },
     },
     {
       $unwind: "$user",
+    },
+    ...groupLookup(own),
+    {
+      $set: {
+        verified: {
+          $cond: [
+            own,
+            true,
+            {
+              $cond: [
+                {
+                  $eq: [
+                    {
+                      $size: "$verifiedBy",
+                    },
+                    {
+                      $size: "$group.members",
+                    },
+                  ],
+                },
+                true,
+                false,
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: { ids: "$group.members" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $in: ["$_id", { $ifNull: ["$$ids", []] }],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+            },
+          },
+        ],
+        as: "members",
+      },
+    },
+    {
+      $unset: ["group"],
     },
   ]);
 
