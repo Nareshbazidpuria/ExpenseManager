@@ -14,9 +14,7 @@ export const createGroup = handleExceptions(async (req, res) => {
 });
 
 export const groupList = handleExceptions(async (req, res) => {
-  const list = await groupsDB({
-    members: { $elemMatch: { $eq: new ObjectId(req.auth._id) } },
-  });
+  const list = await groupsDB(new ObjectId(req.auth._id));
   rm(res, "", list || []);
 });
 

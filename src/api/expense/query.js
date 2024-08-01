@@ -11,7 +11,32 @@ export const editExpenseDB = (filter, data) =>
 
 export const deleteExpenseDB = (filter) => Expense.findOneAndDelete(filter);
 
-export const expenseListDB = (filter) =>
+const groupLookup = (own) =>
+  own
+    ? []
+    : [
+        {
+          $lookup: {
+            from: "groups",
+            let: { id: "$to" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: [{ $toString: "$_id" }, "$$id"],
+                  },
+                },
+              },
+            ],
+            as: "group",
+          },
+        },
+        {
+          $unwind: "$group",
+        },
+      ];
+
+export const expenseListDB = (filter, own) =>
   Expense.aggregate([
     {
       $match: filter,
@@ -35,12 +60,68 @@ export const expenseListDB = (filter) =>
               },
             },
           },
+          {
+            $project: {
+              name: 1,
+            },
+          },
         ],
         as: "user",
       },
     },
     {
       $unwind: "$user",
+    },
+    ...groupLookup(own),
+    {
+      $set: {
+        verified: {
+          $cond: [
+            own,
+            true,
+            {
+              $cond: [
+                {
+                  $eq: [
+                    {
+                      $size: "$verifiedBy",
+                    },
+                    {
+                      $size: "$group.members",
+                    },
+                  ],
+                },
+                true,
+                false,
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: { ids: "$group.members" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $in: ["$_id", { $ifNull: ["$$ids", []] }],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+            },
+          },
+        ],
+        as: "members",
+      },
+    },
+    {
+      $unset: ["group"],
     },
   ]);
 
@@ -154,6 +235,127 @@ export const totalTeamDB = (date, auth, to) =>
           $subtract: [
             { $ifNull: ["$you.amount", 0] },
             { $ifNull: ["$third", 0] },
+          ],
+        },
+      },
+    },
+  ]);
+
+export const totalPersonalDB = (date, auth, to) =>
+  Expense.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+          $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+        },
+        to,
+      },
+    },
+    {
+      $group: {
+        _id: "$user",
+        amount: {
+          $sum: {
+            $ifNull: ["$amount", 0],
+          },
+        },
+      },
+    },
+    {
+      $sort: {
+        amount: -1,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: {
+          id: "$_id",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ["$_id", "$$id"],
+              },
+            },
+          },
+        ],
+        as: "name",
+      },
+    },
+    {
+      $unwind: "$name",
+    },
+    {
+      $set: {
+        name: "$name.name",
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        members: {
+          $push: "$$ROOT",
+        },
+        total: {
+          $sum: "$amount",
+        },
+      },
+    },
+    // {
+    //   $lookup: {
+    //     from: "groups",
+    //     pipeline: [
+    //       {
+    //         $match: {
+    //           _id: new ObjectId(to),
+    //         },
+    //       },
+    //     ],
+    //     as: "divideBy",
+    //   },
+    // },
+    // {
+    //   $unwind: "$divideBy",
+    // },
+    {
+      $set: {
+        // third: {
+        //   $divide: ["$total", { $ifNull: [{ $size: "$divideBy.members" }, 3] }],
+        // },
+        you: {
+          $arrayElemAt: [
+            {
+              $ifNull: [
+                {
+                  $filter: {
+                    input: "$members",
+                    as: "you",
+                    cond: { $eq: ["$$you._id", auth] },
+                  },
+                },
+                [],
+              ],
+            },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $set: {
+        you: { $ifNull: ["$you.amount", 0] },
+        remaining: {
+          $subtract: [
+            { $ifNull: ["$you.amount", 0] },
+            {
+              $subtract: [
+                { $ifNull: ["$total", 0] },
+                { $ifNull: ["$you.amount", 0] },
+              ],
+            },
           ],
         },
       },
