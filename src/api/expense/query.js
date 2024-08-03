@@ -129,6 +129,7 @@ export const totalTeamDB = (date, auth, to) =>
   Expense.aggregate([
     {
       $match: {
+        verified: true,
         createdAt: {
           $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
           $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
@@ -245,6 +246,7 @@ export const totalPersonalDB = (date, auth, to) =>
   Expense.aggregate([
     {
       $match: {
+        verified: true,
         createdAt: {
           $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
           $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),

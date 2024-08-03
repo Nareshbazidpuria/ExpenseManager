@@ -103,10 +103,14 @@ export const verifyExpense = async (req, res) => {
       { _id: req.params.id, user: { $ne: req.auth._id } },
       { $addToSet: { verifiedBy: req.auth._id } }
     );
-    if (verified)
+    if (verified) {
+      const group = await getGroupDB({ _id: verified.to });
+      if (group?.members?.length === verified.verifiedBy.length)
+        await editExpenseDB({ _id: verified._id }, { verified: true });
       return res
         .status(200)
         .send({ message: "Expense has been verified from your side" });
+    }
     return res.status(400).send({ message: "Unable to verify this expense" });
   } catch (error) {
     console.log(error);

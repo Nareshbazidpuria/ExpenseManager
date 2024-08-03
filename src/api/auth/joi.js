@@ -40,5 +40,7 @@ export const editProfileJoi = {
   body: Joi.object({
     name: Joi.string().min(3).max(20),
     monthlyLimit: Joi.number().positive().allow(0),
+    hiddenGroups: Joi.array().items(Joi.string()),
+    type: Joi.string().valid("hide", "unhide"),
   }),
 };

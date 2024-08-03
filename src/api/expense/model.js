@@ -9,6 +9,10 @@ export const Expense = model(
       amount: Number,
       additional: String,
       to: String,
+      verified: {
+        type: Boolean,
+        default: false,
+      },
       verifiedBy: [ObjectId],
       purpose: {
         type: String,
