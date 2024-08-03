@@ -28,6 +28,7 @@ export const groupList = handleExceptions(async (req, res) => {
     const list = await getGroupsDB({ _id: { $in: hiddenGroups } }, ["name"]);
     return rm(res, "", list || []);
   }
+  console.log(1112);
   const list = await groupsDB(filter, req.auth._id);
   rm(res, "", list || []);
 });
