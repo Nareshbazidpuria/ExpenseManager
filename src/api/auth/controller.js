@@ -75,8 +75,24 @@ export const profile = handleExceptions(async (req, res) => {
 });
 
 export const updateProfile = handleExceptions(async (req, res) => {
-  const updated = await editUserDB({ _id: req.auth._id }, req.body);
-  if (updated) return rm(res, "Profile updated");
+  const { hiddenGroups, type } = req.body;
+  if (type === "hide") {
+    const updated = await editUserDB(
+      { _id: req.auth._id },
+      { $addToSet: { hiddenGroups } }
+    );
+    if (updated)
+      return rm(
+        res,
+        "Groups have been hidden, you can unhide them from my profile"
+      );
+  } else if (type === "unhide") {
+    const updated = await editUserDB({ _id: req.auth._id }, { hiddenGroups });
+    if (updated) return rm(res, "");
+  } else {
+    const updated = await editUserDB({ _id: req.auth._id }, req.body);
+    if (updated) return rm(res, "Profile updated");
+  }
   return badReq(res, "Something went wrong");
 });
 

@@ -2,6 +2,7 @@ import { Group } from "./model";
 
 export const createGroupDB = (group) => Group.create(group);
 export const getGroupDB = (filter) => Group.findOne(filter);
+export const getGroupsDB = (filter, fields) => Group.find(filter, fields);
 export const editGroupDB = (filter, updation) =>
   Group.findOneAndUpdate(filter, updation, { new: true });
 
@@ -69,12 +70,10 @@ export const groupDetailsDB = (filter) =>
     },
   ]);
 
-export const groupsDB = (auth) =>
+export const groupsDB = ($match, auth) =>
   Group.aggregate([
     {
-      $match: {
-        members: { $elemMatch: { $eq: auth } },
-      },
+      $match,
     },
     {
       $lookup: {

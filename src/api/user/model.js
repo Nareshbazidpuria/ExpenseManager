@@ -9,6 +9,7 @@ export const User = model(
       secretCode: String,
       email: String,
       monthlyLimit: Number,
+      hiddenGroups: [Schema.ObjectId],
     },
     { timestamps: true }
   )
