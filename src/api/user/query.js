@@ -42,7 +42,7 @@ export const notVerifiedEDB = () =>
     {
       $lookup: {
         from: "expenses",
-        let: { to: "$groups._id" },
+        let: { to: "$groups._id", id: "$_id" },
         pipeline: [
           {
             $match: {
@@ -50,19 +50,18 @@ export const notVerifiedEDB = () =>
                 $eq: ["$to", { $toString: "$$to" }],
               },
               createdAt: { $lte: moment().subtract(1, "day").toDate() },
-              verifiedBy: { $elemMatch: { $ne: "$_id" } },
+              verifiedBy: { $elemMatch: { $ne: "$$id" } },
             },
+          },
+          {
+            $limit: 1,
           },
         ],
         as: "expenses",
       },
     },
     {
-      $match: {
-        $expr: {
-          $gt: [{ $size: "$expenses" }, 0],
-        },
-      },
+      $unwind: "$expenses",
     },
     {
       $group: {
