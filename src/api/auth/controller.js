@@ -43,10 +43,7 @@ export const login = handleExceptions(async (req, res) => {
     return badReq(res, rMsg.INCORRECT_PASSWORD);
   const accessToken = generateToken({ userId: user._id });
   if (!(await loginDB({ userId: user._id, accessToken }))) return badReq(res);
-  return rm(res, rMsg.LOGIN_SUCCESS, {
-    accessToken,
-    user: { name: user.name, _id: user._id },
-  });
+  return rm(res, rMsg.LOGIN_SUCCESS, { accessToken, user });
 });
 
 export const logout = handleExceptions(async (req, res) => {

@@ -143,8 +143,36 @@ export const groupsDB = ($match, auth) =>
       $unwind: "$admin",
     },
     {
+      $lookup: {
+        from: "expenses",
+        let: { to: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $and: [
+                {
+                  $expr: {
+                    $eq: ["$to", { $toString: "$$to" }],
+                  },
+                },
+                {
+                  $expr: {
+                    $not: {
+                      $in: [auth, "$verifiedBy"],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        as: "expenses",
+      },
+    },
+    {
       $set: {
         admin: "$admin.name",
+        unverifiedCount: { $size: "$expenses" },
       },
     },
     {
