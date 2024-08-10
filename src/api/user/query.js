@@ -46,11 +46,21 @@ export const notVerifiedEDB = () =>
         pipeline: [
           {
             $match: {
-              $expr: {
-                $eq: ["$to", { $toString: "$$to" }],
-              },
+              $and: [
+                {
+                  $expr: {
+                    $eq: ["$to", { $toString: "$$to" }],
+                  },
+                },
+                {
+                  $expr: {
+                    $not: {
+                      $in: ["$$id", "$verifiedBy"],
+                    },
+                  },
+                },
+              ],
               createdAt: { $lte: moment().subtract(1, "day").toDate() },
-              verifiedBy: { $elemMatch: { $ne: "$$id" } },
             },
           },
           {
