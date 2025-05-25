@@ -5,7 +5,7 @@ import { notVerifiedEDB } from "../api/user/query";
 import { sendEmail } from "./mailer";
 
 export const keepAlive = () =>
-  cron.schedule("*/14 * * * * ", () => {
+  cron.schedule("*/5 * * * * ", () => {
     https
       .get("https://expensemanager-047k.onrender.com", (res) => {
         if (res?.statusCode === 200) console.log("server restarted");
