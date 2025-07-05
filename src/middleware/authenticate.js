@@ -11,7 +11,10 @@ export const authenticate = handleExceptions(async (req, res, next) => {
   const credentials = jwtDecode(token),
     user = await getUserDB({ _id: credentials.userId });
   if (!user) return rm(res, "Session expired", {}, 401);
-  const auth = await getLoginDB({ userId: credentials.userId });
+  const auth = await getLoginDB({
+    userId: credentials.userId,
+    accessToken: token,
+  });
   if (!auth) return rm(res, "Session expired", {}, 401);
   req.auth = user;
   next();
