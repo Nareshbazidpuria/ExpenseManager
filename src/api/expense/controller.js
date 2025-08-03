@@ -17,11 +17,13 @@ import { getUserDB } from "../user/query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { addNotificationDB } from "../notifications/query";
 import { getGroupDB } from "../group/query";
+import { sendPushNtification } from "../../utils/firebase";
+import { getLoginDB } from "../auth/query";
 // import { sendNotification } from "../../utils/push";
 // import { getExpoTokensDB, getUserDB } from "../user/query";
 
 export const addExpense = handleExceptions(async (req, res) => {
-  const { additional, purpose } = req.body,
+  const { additional, purpose, to, images = [], amount } = req.body,
     { _id, monthlyLimit } = req.auth;
   if (purpose === "Write your own ...") req.body.purpose = additional;
   const added = await addExpenseDB({
@@ -38,6 +40,14 @@ export const addExpense = handleExceptions(async (req, res) => {
         data.message =
           "You have crossed your monthly expense limit, spend carefully";
     }
+    const userlogin = await getLoginDB({ userId: to });
+    console.log(images[0] && process.env.BASE_URL + images[0]);
+    if (userlogin?.fcmToken)
+      await sendPushNtification(userlogin.fcmToken, {
+        title: "New Expense",
+        body: `${req.auth.name} has added a new expense\n${purpose}\nRs. ${amount}`,
+        imageUrl: images[0] && process.env.BASE_URL + images[0],
+      });
     return rm(res, "Expense added", data, 201);
   }
   return badReq(res, "Unable to save your data !");
