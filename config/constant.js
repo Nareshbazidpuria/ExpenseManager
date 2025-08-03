@@ -46,4 +46,6 @@ export const rMsg = {
 export const expenseTypes = {
   own: "own",
   team: "team",
+  friend: "friend",
+  group: "group",
 };

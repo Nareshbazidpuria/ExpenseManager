@@ -72,58 +72,147 @@ export const expenseListDB = (filter, own) =>
     {
       $unwind: "$user",
     },
-    ...groupLookup(own),
-    {
-      $set: {
-        verified: {
-          $cond: [
-            own,
-            true,
-            {
-              $cond: [
-                {
-                  $eq: [
-                    {
-                      $size: "$verifiedBy",
-                    },
-                    {
-                      $size: "$group.members",
-                    },
-                  ],
-                },
-                true,
-                false,
-              ],
-            },
-          ],
-        },
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        let: { ids: "$group.members" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $in: ["$_id", { $ifNull: ["$$ids", []] }],
-              },
-            },
-          },
-          {
-            $project: {
-              name: 1,
-            },
-          },
-        ],
-        as: "members",
-      },
-    },
-    {
-      $unset: ["group"],
-    },
+    // ...groupLookup(own),
+    // {
+    //   $set: {
+    //     verified: {
+    //       $cond: [
+    //         own,
+    //         true,
+    //         {
+    //           $cond: [
+    //             {
+    //               $eq: [
+    //                 {
+    //                   $size: "$verifiedBy",
+    //                 },
+    //                 {
+    //                   $size: "$group.members",
+    //                 },
+    //               ],
+    //             },
+    //             true,
+    //             false,
+    //           ],
+    //         },
+    //       ],
+    //     },
+    //   },
+    // },
+    // {
+    //   $lookup: {
+    //     from: "users",
+    //     let: { ids: "$group.members" },
+    //     pipeline: [
+    //       {
+    //         $match: {
+    //           $expr: {
+    //             $in: ["$_id", { $ifNull: ["$$ids", []] }],
+    //           },
+    //         },
+    //       },
+    //       {
+    //         $project: {
+    //           name: 1,
+    //         },
+    //       },
+    //     ],
+    //     as: "members",
+    //   },
+    // },
+    // {
+    //   $unset: ["group"],
+    // },
   ]);
+
+// export const expenseListDB = (filter, own) =>
+//   Expense.aggregate([
+//     {
+//       $match: filter,
+//     },
+//     {
+//       $sort: {
+//         createdAt: -1,
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "users",
+//         let: {
+//           id: "$user",
+//         },
+//         pipeline: [
+//           {
+//             $match: {
+//               $expr: {
+//                 $eq: ["$_id", "$$id"],
+//               },
+//             },
+//           },
+//           {
+//             $project: {
+//               name: 1,
+//             },
+//           },
+//         ],
+//         as: "user",
+//       },
+//     },
+//     {
+//       $unwind: "$user",
+//     },
+//     ...groupLookup(own),
+//     {
+//       $set: {
+//         verified: {
+//           $cond: [
+//             own,
+//             true,
+//             {
+//               $cond: [
+//                 {
+//                   $eq: [
+//                     {
+//                       $size: "$verifiedBy",
+//                     },
+//                     {
+//                       $size: "$group.members",
+//                     },
+//                   ],
+//                 },
+//                 true,
+//                 false,
+//               ],
+//             },
+//           ],
+//         },
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "users",
+//         let: { ids: "$group.members" },
+//         pipeline: [
+//           {
+//             $match: {
+//               $expr: {
+//                 $in: ["$_id", { $ifNull: ["$$ids", []] }],
+//               },
+//             },
+//           },
+//           {
+//             $project: {
+//               name: 1,
+//             },
+//           },
+//         ],
+//         as: "members",
+//       },
+//     },
+//     {
+//       $unset: ["group"],
+//     },
+//   ]);
 
 export const totalTeamDB = (date, auth, to) =>
   Expense.aggregate([

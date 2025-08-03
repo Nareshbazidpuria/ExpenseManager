@@ -22,6 +22,7 @@ export const Expense = model(
         type: Boolean,
         default: false,
       },
+      images: [String],
     },
     { timestamps: true }
   )

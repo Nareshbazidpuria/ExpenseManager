@@ -3,6 +3,7 @@ import { User } from "./model";
 
 export const addUserDB = (user) => User.create(user);
 export const getUserDB = (filter) => User.findOne(filter);
+export const getUsersDB = (filter) => User.find(filter);
 
 export const editUserDB = (filter, updation) =>
   User.findOneAndUpdate(filter, updation, { new: true });

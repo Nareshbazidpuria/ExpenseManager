@@ -17,5 +17,6 @@ export const authenticate = handleExceptions(async (req, res, next) => {
   });
   if (!auth) return rm(res, "Session expired", {}, 401);
   req.auth = user;
+  req.login = auth;
   next();
 });

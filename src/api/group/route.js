@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { createGroup, editGroup, groupDetails, groupList } from "./controller";
+import {
+  createGroup,
+  editGroup,
+  groupDetails,
+  groupList,
+  groupListHome,
+} from "./controller";
 import { validate } from "express-validation";
 import { createGroupJoi, editGroupJoi } from "./joi";
 
@@ -9,6 +15,7 @@ groupRouter
   .route("/")
   .post(validate(createGroupJoi), createGroup)
   .get(groupList);
+groupRouter.route("/home").get(groupListHome);
 groupRouter
   .route("/:id")
   .get(groupDetails)

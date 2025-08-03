@@ -44,22 +44,40 @@ export const addExpense = handleExceptions(async (req, res) => {
 });
 
 export const expenseList = handleExceptions(async (req, res) => {
-  const date = req.query.date || new Date(),
+  const // date = req.query.date || new Date(),
     filter = {
-      createdAt: {
-        $gt: new Date(
-          moment(new Date(date)).tz("Asia/Kolkata").startOf("month")
-        ),
-        $lte: new Date(
-          moment(new Date(date)).tz("Asia/Kolkata").endOf("month")
-        ),
-      },
+      // createdAt: {
+      //   $gt: new Date(
+      //     moment(new Date(date)).tz("Asia/Kolkata").startOf("month")
+      //   ),
+      //   $lte: new Date(
+      //     moment(new Date(date)).tz("Asia/Kolkata").endOf("month")
+      //   ),
+      // },
       to: req.query.to || expenseTypes.team,
     };
   if (filter.to === expenseTypes.own) filter.user = new ObjectId(req.auth._id);
   const list = await expenseListDB(filter, filter.to === expenseTypes.own);
   return rm(res, "", list);
 });
+
+// export const expenseList = handleExceptions(async (req, res) => {
+//   const date = req.query.date || new Date(),
+//     filter = {
+//       createdAt: {
+//         $gt: new Date(
+//           moment(new Date(date)).tz("Asia/Kolkata").startOf("month")
+//         ),
+//         $lte: new Date(
+//           moment(new Date(date)).tz("Asia/Kolkata").endOf("month")
+//         ),
+//       },
+//       to: req.query.to || expenseTypes.team,
+//     };
+//   if (filter.to === expenseTypes.own) filter.user = new ObjectId(req.auth._id);
+//   const list = await expenseListDB(filter, filter.to === expenseTypes.own);
+//   return rm(res, "", list);
+// });
 
 export const deleteExpense = handleExceptions(async (req, res) => {
   if (await deleteExpenseDB({ _id: req.params.id, user: req.auth._id }))

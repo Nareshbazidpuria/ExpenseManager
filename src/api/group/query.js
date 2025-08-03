@@ -1,4 +1,7 @@
+import { expenseTypes } from "../../../config/constant";
+import { User } from "../user/model";
 import { Group } from "./model";
+import { ObjectId } from "mongodb";
 
 export const createGroupDB = (group) => Group.create(group);
 export const getGroupDB = (filter) => Group.findOne(filter);
@@ -172,6 +175,199 @@ export const groupsDB = ($match, auth) =>
     {
       $set: {
         admin: "$admin.name",
+        unverifiedCount: { $size: "$expenses" },
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+  ]);
+
+export const groupsHomeDB = ($match, auth) =>
+  User.aggregate([
+    {
+      $facet: {
+        friends: [
+          {
+            $match: {
+              friends: { $elemMatch: { $eq: auth._id } },
+              _id: { $ne: auth._id },
+            },
+          },
+          {
+            $set: {
+              type: expenseTypes.friend,
+            },
+          },
+        ],
+        groups: [
+          {
+            $group: {
+              _id: null,
+            },
+          },
+          {
+            $lookup: {
+              from: "groups",
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $in: [auth._id, "$members"],
+                    },
+                  },
+                },
+                {
+                  $set: {
+                    type: expenseTypes.group,
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "users",
+                    let: {
+                      ids: {
+                        $cond: [
+                          {
+                            $eq: [
+                              {
+                                $size: "$members",
+                              },
+                              2,
+                            ],
+                          },
+                          "$members",
+                          [],
+                        ],
+                      },
+                    },
+                    pipeline: [
+                      {
+                        $match: {
+                          _id: {
+                            $ne: auth,
+                          },
+                          $expr: {
+                            $in: ["$_id", "$$ids"],
+                          },
+                        },
+                      },
+                      {
+                        $project: {
+                          name: 1,
+                        },
+                      },
+                    ],
+                    // localField: "members",
+                    // foreignField: "_id",
+                    as: "memberss",
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "users",
+                    localField: "admin",
+                    foreignField: "_id",
+                    as: "admin",
+                  },
+                },
+                {
+                  $unwind: "$admin",
+                },
+                {
+                  $set: {
+                    admin: "$admin.name",
+                  },
+                },
+              ],
+              as: "groups",
+            },
+          },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        all: {
+          $push: {
+            $setUnion: ["$friends", { $first: "$groups.groups" }],
+          },
+        },
+      },
+    },
+    {
+      $set: {
+        all: {
+          $reduce: {
+            input: "$all",
+            initialValue: [],
+            in: { $setUnion: ["$$value", "$$this"] },
+          },
+        },
+      },
+    },
+    {
+      $unwind: "$all",
+    },
+    {
+      $replaceRoot: {
+        newRoot: "$all",
+      },
+    },
+    {
+      $lookup: {
+        from: "expenses",
+        let: { to: "$_id", type: "$type" },
+        pipeline: [
+          {
+            $match: {
+              $or: [
+                {
+                  type: expenseTypes.friend,
+                  $and: [
+                    {
+                      $expr: {
+                        $eq: ["$to", { $toString: auth._id }],
+                      },
+                    },
+                    {
+                      $expr: {
+                        $not: {
+                          $in: [auth._id, "$verifiedBy"],
+                        },
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: expenseTypes.group,
+                  $and: [
+                    {
+                      $expr: {
+                        $eq: ["$to", { $toString: "$$to" }],
+                      },
+                    },
+                    {
+                      $expr: {
+                        $not: {
+                          $in: [auth._id, "$verifiedBy"],
+                        },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        as: "expenses",
+      },
+    },
+    {
+      $set: {
         unverifiedCount: { $size: "$expenses" },
       },
     },

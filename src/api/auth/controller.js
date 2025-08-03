@@ -42,7 +42,14 @@ export const login = handleExceptions(async (req, res) => {
   if (!(await comparePassword(req.body.password, user.password)))
     return badReq(res, rMsg.INCORRECT_PASSWORD);
   const accessToken = generateToken({ userId: user._id });
-  if (!(await loginDB({ userId: user._id, accessToken }))) return badReq(res);
+  if (
+    !(await loginDB({
+      userId: user._id,
+      accessToken,
+      fcmToken: req.body.fcmToken,
+    }))
+  )
+    return badReq(res);
   return rm(res, rMsg.LOGIN_SUCCESS, { accessToken, user });
 });
 

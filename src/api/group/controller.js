@@ -5,6 +5,7 @@ import {
   getGroupsDB,
   groupDetailsDB,
   groupsDB,
+  groupsHomeDB,
 } from "./query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { rMsg } from "../../../config/constant";
@@ -17,6 +18,12 @@ export const createGroup = handleExceptions(async (req, res) => {
   });
   if (created) return rm(res, rMsg.GROUP_CREATED);
   return badReq(res);
+});
+
+export const groupListHome = handleExceptions(async (req, res) => {
+  const filter = {};
+  const list = await groupsHomeDB(filter, req.auth);
+  rm(res, "", list || []);
 });
 
 export const groupList = handleExceptions(async (req, res) => {

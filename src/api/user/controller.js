@@ -1,41 +1,7 @@
 import moment from "moment";
-import { expenseListDB, getUserDB } from "./query";
+import { editUserDB, expenseListDB, getUserDB, getUsersDB } from "./query";
 import { expenseTypes } from "../../../config/constant";
-import { badReq, handleExceptions, rm } from "../../utils/common";
-
-// export const login = async (req, res) => {
-//   try {
-//     if (req.body.changePass) {
-//       const user = await editUserDB(
-//         { name: req.body.name },
-//         { password: req.body.password }
-//       );
-//       return res.status(200).send({ user });
-//     }
-//     const user = await editUserDB(
-//       {
-//         name: req.body.name,
-//         password: req.body.password,
-//       },
-//       req.body
-//     );
-//     // const user = await getUserDB({
-//     //   name: req.body.name,
-//     //   password: req.body.password,
-//     // });
-//     if (user)
-//       return res.status(200).send({
-//         user,
-//         changePass: ["sanjay", "bishtt", "shergill"].includes(
-//           req.body.password
-//         ),
-//       });
-//     return res.status(400).send({ message: "Invalid credentials !" });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).send({ message: "Something went wrong" });
-//   }
-// };
+import { badReq, handleExceptions, noContent, rm } from "../../utils/common";
 
 export const getMember = handleExceptions(async (req, res) => {
   if (req.auth.secretCode === req.query.secretCode)
@@ -45,19 +11,40 @@ export const getMember = handleExceptions(async (req, res) => {
   return badReq(res, "Invalid secret code");
 });
 
-export const expenseList = async (req, res) => {
-  try {
-    const date = req.query.date || new Date();
-    return res.status(200).send({
-      data: await expenseListDB({
-        createdAt: {
-          $gt: new Date(moment(date).startOf("month")),
-          $lte: new Date(moment(date).endOf("month")),
-        },
-        to: req.query.to || expenseTypes.team,
-      }),
-    });
-  } catch (error) {
-    return res.status(500).send({ message: "Something went wrong" });
-  }
-};
+export const friendList = handleExceptions(async (req, res) => {
+  const { name } = req.query,
+    filter = { _id: { $in: req.auth.friends } };
+  if (name) filter.name = { $regex: name, $options: "i" };
+  const friends = await getUsersDB(filter).select({ name: 1 });
+  if (friends?.length) return rm(res, "", friends);
+  noContent(res);
+});
+
+export const expenseList = handleExceptions(async (req, res) => {
+  const date = req.query.date || new Date();
+  return res.status(200).send({
+    data: await expenseListDB({
+      createdAt: {
+        $gt: new Date(moment(date).startOf("month")),
+        $lte: new Date(moment(date).endOf("month")),
+      },
+      to: req.query.to || expenseTypes.team,
+    }),
+  });
+});
+
+export const addFriend = handleExceptions(async (req, res) => {
+  const { id } = req.params,
+    { _id } = req.auth;
+  if (id === _id) return badReq(res, "You cannot add yourself as a friend");
+  if ((req.auth.friends || []).map((id) => id.toString()).includes(id))
+    return badReq(res, "You have already added this user as a friend");
+
+  const [you, friend] = await Promise.all([
+    editUserDB({ _id }, { $addToSet: { friends: id } }),
+    editUserDB({ _id: id }, { $addToSet: { friends: _id } }),
+  ]);
+
+  if (you && friend) return rm(res, "Friend added");
+  return badReq(res);
+});
