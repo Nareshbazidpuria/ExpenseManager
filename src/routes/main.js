@@ -8,7 +8,10 @@ import { verifyReminder } from "../utils/cron";
 
 export const mainRoutes = Router();
 
-mainRoutes.get("/", (_, res) => res.send("Hello"));
+mainRoutes.get("/", (_, res) => {
+  console.log("Health check");
+  res.send("Hello");
+});
 mainRoutes.use("/pub", pubRoutes);
 mainRoutes.use("/api", authenticate, protectedRoutes);
 
