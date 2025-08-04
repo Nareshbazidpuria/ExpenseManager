@@ -40,8 +40,8 @@ export const addExpense = handleExceptions(async (req, res) => {
         data.message =
           "You have crossed your monthly expense limit, spend carefully";
     }
-    const userlogin = await getLoginDB({ userId: to });
-    console.log(images[0] && process.env.BASE_URL + images[0]);
+    const userlogin =
+      ObjectId.isValid(to) && (await getLoginDB({ userId: to }));
     if (userlogin?.fcmToken)
       await sendPushNtification(userlogin.fcmToken, {
         title: "New Expense",
