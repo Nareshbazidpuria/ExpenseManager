@@ -14,6 +14,7 @@ mainRoutes.use("/api", authenticate, protectedRoutes);
 
 mainRoutes.use((err, req, res, next) => {
   if (err instanceof ValidationError) return toMsg(res, err);
+  console.log(err);
   return res500(res);
 });
 

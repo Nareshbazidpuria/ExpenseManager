@@ -9,6 +9,9 @@ export const Expense = model(
       amount: Number,
       additional: String,
       to: String,
+      expenseType: String,
+      splitedIn: [ObjectId],
+      splitedAmount: Number,
       verified: {
         type: Boolean,
         default: false,
