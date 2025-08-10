@@ -6,8 +6,7 @@ import { ObjectId } from "mongodb";
 export const createGroupDB = (group) => Group.create(group);
 export const getGroupDB = (filter) => Group.findOne(filter);
 export const getGroupsDB = (filter, fields) => Group.find(filter, fields);
-export const editGroupDB = (filter, updation) =>
-  Group.findOneAndUpdate(filter, updation, { new: true });
+export const editGroupDB = (filter, updation) => Group.findOneAndUpdate(filter, updation, { new: true });
 
 export const groupDetailsDB = (filter) =>
   Group.aggregate([
@@ -228,26 +227,27 @@ export const groupsHomeDB = ($match, auth) =>
                   $lookup: {
                     from: "users",
                     let: {
-                      ids: {
-                        $cond: [
-                          {
-                            $eq: [
-                              {
-                                $size: "$members",
-                              },
-                              2,
-                            ],
-                          },
-                          "$members",
-                          [],
-                        ],
-                      },
+                      ids: { $ifNull: ["$members", []] },
+                      // ids: {
+                      //   $cond: [
+                      //     {
+                      //       $eq: [
+                      //         {
+                      //           $size: "$members",
+                      //         },
+                      //         2,
+                      //       ],
+                      //     },
+                      //     "$members",
+                      //     [],
+                      //   ],
+                      // },
                     },
                     pipeline: [
                       {
                         $match: {
                           _id: {
-                            $ne: auth,
+                            $ne: auth._id,
                           },
                           $expr: {
                             $in: ["$_id", "$$ids"],

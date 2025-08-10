@@ -6,8 +6,7 @@ import { ObjectId } from "mongodb";
 export const addExpenseDB = (data) => Expense.create(data);
 export const getExpenseDB = (filter) => Expense.findOne(filter);
 
-export const editExpenseDB = (filter, data) =>
-  Expense.findOneAndUpdate(filter, data, { new: true });
+export const editExpenseDB = (filter, data) => Expense.findOneAndUpdate(filter, data, { new: true });
 
 export const deleteExpenseDB = (filter) => Expense.findOneAndDelete(filter);
 
@@ -32,7 +31,9 @@ const groupLookup = (own) =>
           },
         },
         {
-          $unwind: "$group",
+          $set: {
+            group: { $first: "$group" },
+          },
         },
       ];
 
@@ -72,57 +73,59 @@ export const expenseListDB = (filter, own) =>
     {
       $unwind: "$user",
     },
-    // ...groupLookup(own),
-    // {
-    //   $set: {
-    //     verified: {
-    //       $cond: [
-    //         own,
-    //         true,
-    //         {
-    //           $cond: [
-    //             {
-    //               $eq: [
-    //                 {
-    //                   $size: "$verifiedBy",
-    //                 },
-    //                 {
-    //                   $size: "$group.members",
-    //                 },
-    //               ],
-    //             },
-    //             true,
-    //             false,
-    //           ],
-    //         },
-    //       ],
-    //     },
-    //   },
-    // },
-    // {
-    //   $lookup: {
-    //     from: "users",
-    //     let: { ids: "$group.members" },
-    //     pipeline: [
-    //       {
-    //         $match: {
-    //           $expr: {
-    //             $in: ["$_id", { $ifNull: ["$$ids", []] }],
-    //           },
-    //         },
-    //       },
-    //       {
-    //         $project: {
-    //           name: 1,
-    //         },
-    //       },
-    //     ],
-    //     as: "members",
-    //   },
-    // },
-    // {
-    //   $unset: ["group"],
-    // },
+    ...groupLookup(own),
+    {
+      $set: {
+        verified: {
+          $cond: [
+            own,
+            true,
+            {
+              $cond: [
+                {
+                  $eq: [
+                    {
+                      $size: "$verifiedBy",
+                    },
+                    {
+                      $size: {
+                        $ifNull: ["$group.members", [1, 2]], // for friends , todo manages it
+                      },
+                    },
+                  ],
+                },
+                true,
+                false,
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: { ids: "$group.members" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $in: ["$_id", { $ifNull: ["$$ids", []] }],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+            },
+          },
+        ],
+        as: "members",
+      },
+    },
+    {
+      $unset: ["group"],
+    },
   ]);
 
 // export const expenseListDB = (filter, own) =>
@@ -322,10 +325,7 @@ export const totalTeamDB = (date, auth, to) =>
       $set: {
         you: { $ifNull: ["$you.amount", 0] },
         remaining: {
-          $subtract: [
-            { $ifNull: ["$you.amount", 0] },
-            { $ifNull: ["$third", 0] },
-          ],
+          $subtract: [{ $ifNull: ["$you.amount", 0] }, { $ifNull: ["$third", 0] }],
         },
       },
     },
@@ -442,10 +442,7 @@ export const totalPersonalDB = (date, auth, to) =>
           $subtract: [
             { $ifNull: ["$you.amount", 0] },
             {
-              $subtract: [
-                { $ifNull: ["$total", 0] },
-                { $ifNull: ["$you.amount", 0] },
-              ],
+              $subtract: [{ $ifNull: ["$total", 0] }, { $ifNull: ["$you.amount", 0] }],
             },
           ],
         },

@@ -96,8 +96,10 @@ export const expenseList = handleExceptions(async (req, res) => {
 // });
 
 export const getExpense = handleExceptions(async (req, res) => {
-  const data = await getExpenseDB({ _id: req.params.id, user: req.auth._id });
-  if (data) return rm(res, "", data);
+  const data = await getExpenseDB({ _id: req.params.id, user: req.auth._id }),
+    details =
+      data && (await expenseListDB({ _id: new ObjectId(req.params.id) }, data.expenseType === expenseTypes.own));
+  if (details?.[0]) return rm(res, "", details[0]);
   return badReq(res, "Expense not found");
 });
 

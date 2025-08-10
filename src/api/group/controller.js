@@ -1,12 +1,5 @@
 import { ObjectId } from "mongodb";
-import {
-  createGroupDB,
-  editGroupDB,
-  getGroupsDB,
-  groupDetailsDB,
-  groupsDB,
-  groupsHomeDB,
-} from "./query";
+import { createGroupDB, editGroupDB, getGroupsDB, groupDetailsDB, groupsDB, groupsHomeDB } from "./query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { rMsg } from "../../../config/constant";
 
@@ -29,8 +22,7 @@ export const groupListHome = handleExceptions(async (req, res) => {
 export const groupList = handleExceptions(async (req, res) => {
   const filter = { members: { $elemMatch: { $eq: req.auth._id } } },
     { hiddenGroups } = req.query;
-  if (req.query.hasOwnProperty("hidden"))
-    filter._id = { $nin: req.auth.hiddenGroups || [] };
+  if (req.query.hasOwnProperty("hidden")) filter._id = { $nin: req.auth.hiddenGroups || [] };
   if (hiddenGroups) {
     const list = await getGroupsDB({ _id: { $in: hiddenGroups } }, ["name"]);
     return rm(res, "", list || []);
