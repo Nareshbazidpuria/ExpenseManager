@@ -4,6 +4,7 @@ import { badReq, handleExceptions, rm } from "../../utils/common";
 import { rMsg } from "../../../config/constant";
 
 export const createGroup = handleExceptions(async (req, res) => {
+  console.log(req.body.members);
   const created = await createGroupDB({
     ...req.body,
     members: [...req.body.members, req.auth._id],

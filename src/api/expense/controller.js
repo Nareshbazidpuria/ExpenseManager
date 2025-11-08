@@ -39,6 +39,20 @@ export const addExpense = handleExceptions(async (req, res) => {
       customData: {
         type: pushTypes.expenseDetails,
         data: JSON.stringify({ ...(added._doc || added), user: { name, _id } }),
+        android: JSON.stringify({
+          actions: [
+            { title: "Verify", pressAction: { action: "verify", id: added._id } },
+            { title: "View Details", pressAction: { action: "view", id: added._id } },
+            {
+              title: "Comment",
+              pressAction: { action: "comment", id: added._id },
+              input: {
+                allowFreeFormInput: true,
+                placeholder: "Add a comment",
+              },
+            },
+          ],
+        }),
       },
     };
     if (expenseType === expenseTypes.friend) {

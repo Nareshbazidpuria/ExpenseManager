@@ -25,17 +25,11 @@ export const signUp = handleExceptions(async (req, res) => {
 
 export const login = handleExceptions(async (req, res) => {
   const user = await getUserDB({ email: req.body.email.trim()?.toLowerCase() });
-  if (!user) return badReq(res, rMsg.USER_NOT_FOUND);
-  if (!(await comparePassword(req.body.password, user.password))) return badReq(res, rMsg.INCORRECT_PASSWORD);
+  if (!user) return badReq(res, rMsg.USER_NOT_FOUND, "email");
+  if (!(await comparePassword(req.body.password, user.password))) return badReq(res, rMsg.INCORRECT_PASSWORD, "password");
   const accessToken = generateToken({ userId: user._id });
-  if (
-    !(await loginDB({
-      userId: user._id,
-      accessToken,
-      fcmToken: req.body.fcmToken || "",
-    }))
-  )
-    return badReq(res);
+  const loggedIn = await loginDB({ userId: user._id, accessToken, fcmToken: req.body.fcmToken || "" });
+  if (!loggedIn) return badReq(res);
   return rm(res, rMsg.LOGIN_SUCCESS, { accessToken, user });
 });
 

@@ -5,10 +5,10 @@ import { badReq, handleExceptions, noContent, rm } from "../../utils/common";
 
 export const getMember = handleExceptions(async (req, res) => {
   if (req.auth.secretCode === req.query.secretCode)
-    return badReq(res, "You cannot add yourself as a group member");
+    return badReq(res, "You cannot add yourself as a friend, it's your own connection code");
   const member = await getUserDB({ secretCode: req.query.secretCode });
   if (member) return rm(res, "", { name: member.name, _id: member._id });
-  return badReq(res, "Invalid secret code");
+  return badReq(res, "No user found with this connection code");
 });
 
 export const friendList = handleExceptions(async (req, res) => {
@@ -37,8 +37,7 @@ export const addFriend = handleExceptions(async (req, res) => {
   const { id } = req.params,
     { _id } = req.auth;
   if (id === _id) return badReq(res, "You cannot add yourself as a friend");
-  if ((req.auth.friends || []).map((id) => id.toString()).includes(id))
-    return badReq(res, "You have already added this user as a friend");
+  if ((req.auth.friends || []).map((id) => id.toString()).includes(id)) return badReq(res, "You have already added this user as a friend");
 
   const [you, friend] = await Promise.all([
     editUserDB({ _id }, { $addToSet: { friends: id } }),

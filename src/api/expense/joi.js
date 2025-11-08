@@ -12,3 +12,7 @@ export const expenseListJoi = {
       .valid(...Object.values(expenseTypes)),
   }),
 };
+
+// login navigation, authUser
+// home focus
+// expenses focus
