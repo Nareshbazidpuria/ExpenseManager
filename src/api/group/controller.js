@@ -1,7 +1,8 @@
 import { ObjectId } from "mongodb";
-import { createGroupDB, editGroupDB, getGroupsDB, groupDetailsDB, groupsDB, groupsHomeDB } from "./query";
+import { createGroupDB, editGroupDB, getGroupsDB, groupDetailsDB, groupsDB, groupsHomeDB, settlementGroupsDB } from "./query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { rMsg } from "../../../config/constant";
+import { settlementFriendsDB } from "../user/query";
 
 export const createGroup = handleExceptions(async (req, res) => {
   console.log(req.body.members);
@@ -30,6 +31,11 @@ export const groupList = handleExceptions(async (req, res) => {
   }
   const list = await groupsDB(filter, req.auth._id);
   rm(res, "", list || []);
+});
+
+export const settlementList = handleExceptions(async (req, res) => {
+  const [groups, friends] = await Promise.all([settlementGroupsDB(req.auth._id), settlementFriendsDB(req.auth)]);
+  rm(res, "", [...(groups || []), ...(friends || [])]);
 });
 
 export const groupDetails = handleExceptions(async (req, res) => {

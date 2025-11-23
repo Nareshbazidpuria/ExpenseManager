@@ -12,6 +12,10 @@ export const Expense = model(
       expenseType: String,
       splitedIn: [ObjectId],
       splitedAmount: Number,
+      setteled: {
+        type: Boolean,
+        default: false,
+      },
       verified: {
         type: Boolean,
         default: false,

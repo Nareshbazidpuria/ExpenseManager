@@ -1,12 +1,12 @@
 import moment from "moment";
 import { User } from "./model";
+import { expenseTypes } from "../../../config/constant";
 
 export const addUserDB = (user) => User.create(user);
 export const getUserDB = (filter) => User.findOne(filter);
 export const getUsersDB = (filter) => User.find(filter);
 
-export const editUserDB = (filter, updation) =>
-  User.findOneAndUpdate(filter, updation, { new: true });
+export const editUserDB = (filter, updation) => User.findOneAndUpdate(filter, updation, { new: true });
 
 export const getExpoTokensDB = (id) =>
   User.aggregate([
@@ -79,6 +79,56 @@ export const notVerifiedEDB = () =>
         _id: "$_id",
         email: { $first: "$email" },
         name: { $first: "$name" },
+      },
+    },
+  ]);
+
+export const settlementFriendsDB = (auth) =>
+  User.aggregate([
+    {
+      $match: {
+        _id: { $in: auth.friends },
+      },
+    },
+    {
+      $lookup: {
+        from: "expenses",
+        let: { to: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              expenseType: expenseTypes.friend,
+              verified: true,
+              setteled: false,
+              $or: [
+                {
+                  $expr: {
+                    $eq: ["$user", "$$to"],
+                  },
+                  to: String(auth._id),
+                },
+                {
+                  $expr: {
+                    $eq: ["$to", { $toString: "$$to" }],
+                  },
+                  user: auth._id,
+                },
+              ],
+              verified: true,
+            },
+          },
+          {
+            $limit: 1,
+          },
+        ],
+        as: "expenses",
+      },
+    },
+    { $unwind: "$expenses" },
+    {
+      $project: {
+        name: 1,
+        type: expenseTypes.friend,
       },
     },
   ]);

@@ -3,8 +3,12 @@ import {
   addExpenseDB,
   deleteExpenseDB,
   editExpenseDB,
+  editExpensesDB,
   expenseListDB,
+  friendSettlementsDB,
   getExpenseDB,
+  groupSettlementsDB,
+  groupTotalsDB,
   individualDB,
   totalExpensesDB,
   totalOwnDB,
@@ -13,14 +17,12 @@ import {
 } from "./query";
 import { expenseTags, expenseTypes, pushTypes } from "../../../config/constant";
 import { ObjectId } from "mongodb";
-import { getUserDB } from "../user/query";
-import { badReq, handleExceptions, rm } from "../../utils/common";
+import { badReq, handleExceptions, noContent, rm } from "../../utils/common";
 import { addNotificationDB } from "../notifications/query";
 import { getGroupDB } from "../group/query";
 import { sendPushNtification } from "../../utils/firebase";
 import { getLoginDB, getLoginsDB } from "../auth/query";
-// import { sendNotification } from "../../utils/push";
-// import { getExpoTokensDB, getUserDB } from "../user/query";
+import { addSettlementDB } from "../settlements/query";
 
 export const addExpense = handleExceptions(async (req, res) => {
   const { purpose, to, images = [], amount, expenseType, splitedIn = [] } = req.body,
@@ -111,8 +113,7 @@ export const expenseList = handleExceptions(async (req, res) => {
 
 export const getExpense = handleExceptions(async (req, res) => {
   const data = await getExpenseDB({ _id: req.params.id, user: req.auth._id }),
-    details =
-      data && (await expenseListDB({ _id: new ObjectId(req.params.id) }, data.expenseType === expenseTypes.own));
+    details = data && (await expenseListDB({ _id: new ObjectId(req.params.id) }, data.expenseType === expenseTypes.own));
   if (details?.[0]) return rm(res, "", details[0]);
   return badReq(res, "Expense not found");
 });
@@ -176,6 +177,21 @@ export const totalTeam = handleExceptions(async (req, res) => {
   return rm(res, "", list?.[0]);
 });
 
+export const settlements = handleExceptions(async (req, res) => {
+  const { to, expenseType } = req.query,
+    filter = { to, createdAt: { $lte: new Date() } };
+
+  if (expenseType === expenseTypes.group) {
+    const [data, total] = await Promise.all([groupSettlementsDB(filter), groupTotalsDB(filter)]);
+    if (!data?.[0]?.settlements?.length) return noContent(res);
+    return rm(res, "", { data: data[0].settlements, total: total[0] });
+  } else {
+    const data = await friendSettlementsDB(req.auth._id, to);
+    if (!data?.[0]) return noContent(res);
+    return rm(res, "", data[0]);
+  }
+});
+
 export const totalOwn = handleExceptions(async (req, res) => {
   const date = req.query.date || new Date(),
     list = await totalOwnDB(date, new ObjectId(req.auth._id));
@@ -185,4 +201,63 @@ export const totalOwn = handleExceptions(async (req, res) => {
 export const individual = handleExceptions(async (req, res) => {
   const date = req.query.date || new Date();
   return rm(res, "", await individualDB(date, new ObjectId(req.auth._id)));
+});
+
+export const settleDown = handleExceptions(async (req, res) => {
+  const { type, to } = req.body,
+    upto = new Date(),
+    filter = { to, setteled: false, createdAt: { $lte: upto } };
+  let history;
+  if (type === expenseTypes.group) {
+    const unverifiedExpenses = await getExpenseDB({ ...filter, verified: false });
+    if (unverifiedExpenses) return badReq(res, "Cannot settle dues with unverified expenses present in the group");
+
+    const historyFilter = { to, createdAt: { $lte: upto } };
+
+    const [data, total, group] = await Promise.all([
+      groupSettlementsDB(historyFilter),
+      groupTotalsDB(historyFilter),
+      getGroupDB({ _id: to }),
+    ]);
+    history = {
+      expenseType: expenseTypes.group,
+      user: req.auth._id,
+      upto,
+      participants: group?.members,
+      to,
+      data: { data: data?.[0]?.settlements, total: total?.[0] },
+    };
+
+    const settled = await editExpensesDB(filter, { setteled: true });
+    if (!settled?.modifiedCount) return badReq(res, "No dues to settle in the group");
+    await addSettlementDB(history);
+    return rm(res, "Settled all dues in the group");
+  } else if (type === expenseTypes.friend) {
+    delete filter.to;
+    filter.$or = [
+      { to: String(req.auth._id), user: new ObjectId(to) },
+      { to, user: req.auth._id },
+    ];
+    const unverifiedExpenses = await getExpenseDB({ ...filter, verified: false });
+    if (unverifiedExpenses) return badReq(res, "Cannot settle dues with unverified expenses present with the friend");
+
+    const data = await friendSettlementsDB(req.auth._id, to);
+    history = {
+      expenseType: expenseTypes.friend,
+      user: req.auth._id,
+      upto,
+      to,
+      participants: [req.auth._id, to],
+      data: data?.[0],
+    };
+
+    const settled = await editExpensesDB(filter, { setteled: true });
+    if (!settled?.modifiedCount) return badReq(res, "No dues to settle with the friend");
+
+    await addSettlementDB(history);
+
+    return rm(res, "Settled all dues with the friend");
+  }
+
+  // todo notify the other party
 });

@@ -34,13 +34,12 @@ export const genSecretCode = async () => {
   return secretCode;
 };
 
-export const formatMsg = (msg) => {
-  if (msg[0] === '"') {
-    return msg
-      .split(msg.slice(msg.indexOf('"'), msg.lastIndexOf('"') + 1))
-      .join(capitalize(msg.slice(msg.indexOf('"') + 1, msg.lastIndexOf('"'))));
-  }
-};
+export const formatMsg = (msg = "") =>
+  msg[0] === '"'
+    ? msg
+        .split(msg.slice(msg.indexOf('"'), msg.lastIndexOf('"') + 1))
+        .join(capitalize(msg.slice(msg.indexOf('"') + 1, msg.lastIndexOf('"'))))
+    : msg;
 
 export const toMsg = (res, err) =>
   err?.details?.body?.length || err?.details?.query?.length

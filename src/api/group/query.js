@@ -80,62 +80,21 @@ export const groupsDB = ($match, auth) =>
     {
       $lookup: {
         from: "users",
-        let: {
-          ids: {
-            $cond: [
-              {
-                $eq: [
-                  {
-                    $size: "$members",
-                  },
-                  2,
-                ],
-              },
-              "$members",
-              [],
-            ],
-          },
-        },
+        localField: "members",
+        foreignField: "_id",
         pipeline: [
-          {
-            $match: {
-              _id: {
-                $ne: auth,
-              },
-              $expr: {
-                $in: ["$_id", "$$ids"],
-              },
-            },
-          },
           {
             $project: {
               name: 1,
             },
           },
         ],
-        // localField: "members",
-        // foreignField: "_id",
         as: "memberss",
       },
     },
     {
       $lookup: {
         from: "users",
-        // let: { id: "$admin" },
-        // pipeline: [
-        //   {
-        //     $match: {
-        //       $expr: {
-        //         $eq: ["$_id", "$$id"],
-        //       },
-        //     },
-        //   },
-        //   {
-        //     $project: {
-        //       name: 1,
-        //     },
-        //   },
-        // ],
         localField: "admin",
         foreignField: "_id",
         as: "admin",
@@ -180,6 +139,46 @@ export const groupsDB = ($match, auth) =>
     {
       $sort: {
         createdAt: -1,
+      },
+    },
+  ]);
+
+export const settlementGroupsDB = (userId) =>
+  Group.aggregate([
+    {
+      $match: {
+        members: { $elemMatch: { $eq: userId } },
+      },
+    },
+    {
+      $lookup: {
+        from: "expenses",
+        let: { to: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              expenseType: expenseTypes.group,
+              setteled: false,
+
+              $expr: {
+                $eq: ["$to", { $toString: "$$to" }],
+              },
+              verified: true,
+            },
+          },
+          {
+            $limit: 1,
+          },
+        ],
+        as: "expenses",
+      },
+    },
+    { $unwind: "$expenses" },
+    {
+      $project: {
+        name: 1,
+        members: 1,
+        type: expenseTypes.group,
       },
     },
   ]);
