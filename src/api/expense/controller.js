@@ -251,6 +251,12 @@ export const totalTeam = handleExceptions(async (req, res) => {
   return rm(res, "", list?.[0]);
 });
 
+export const monthlyBudget = handleExceptions(async (req, res) => {
+  if (!req.auth.monthlyLimit) return noContent(res);
+  const data = { limit: req.auth.monthlyLimit, spent: (await totalExpensesDB(new Date(), req.auth._id))?.[0]?.amount || 0 };
+  return rm(res, "", data);
+});
+
 export const settlements = handleExceptions(async (req, res) => {
   const { to, expenseType } = req.query,
     filter = { to, createdAt: { $lte: new Date() } };

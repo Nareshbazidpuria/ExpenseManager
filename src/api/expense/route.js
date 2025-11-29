@@ -6,6 +6,7 @@ import {
   expenseList,
   getExpense,
   individual,
+  monthlyBudget,
   settleDown,
   settlements,
   totalOwn,
@@ -19,6 +20,7 @@ export const expenseRouter = Router();
 
 expenseRouter.route("/").post(validate(addExpenseJoi), addExpense).get(validate(expenseListJoi), expenseList);
 expenseRouter.route("/team").get(totalTeam);
+expenseRouter.route("/budget").get(monthlyBudget);
 expenseRouter.route("/settlements").get(validate(settlementsJoi), settlements);
 expenseRouter.route("/settle-down").post(validate(settleDownJoi), settleDown);
 expenseRouter.route("/own").get(totalOwn);
