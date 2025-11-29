@@ -13,11 +13,13 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 export const sendPushNtification = async (token, data = {}) => {
   const { title, body, imageUrl, customData = {}, android = {} } = data;
   if (imageUrl) customData.imageUrl = imageUrl;
+  customData.title = title;
+  customData.body = body;
 
   try {
     const response = await admin.messaging().send({
       token,
-      notification: { title, body, imageUrl },
+      // notification: { title, body, imageUrl },
       data: customData,
       android: { priority: "high", notification: { sound: "default" }, ...android },
       apns: { payload: { aps: { sound: "default" } } },

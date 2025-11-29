@@ -23,4 +23,4 @@ expenseRouter.route("/settlements").get(validate(settlementsJoi), settlements);
 expenseRouter.route("/settle-down").post(validate(settleDownJoi), settleDown);
 expenseRouter.route("/own").get(totalOwn);
 expenseRouter.route("/individual").get(individual);
-expenseRouter.route("/:id").get(getExpense).delete(deleteExpense).put(editExpense).patch(verifyExpense);
+expenseRouter.route("/:id").get(getExpense).delete(deleteExpense).put(validate(addExpenseJoi), editExpense).patch(verifyExpense);

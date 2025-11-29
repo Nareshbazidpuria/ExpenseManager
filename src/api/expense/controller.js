@@ -23,10 +23,18 @@ import { getGroupDB } from "../group/query";
 import { sendPushNtification } from "../../utils/firebase";
 import { getLoginDB, getLoginsDB } from "../auth/query";
 import { addSettlementDB } from "../settlements/query";
+import { editUserDB, getUserDB } from "../user/query";
 
 export const addExpense = handleExceptions(async (req, res) => {
   const { purpose, to, images = [], amount, expenseType, splitedIn = [] } = req.body,
     { _id, monthlyLimit, name } = req.auth;
+  const groupOrUser =
+    expenseType === expenseTypes.own
+      ? req.auth
+      : expenseType === expenseTypes.group
+      ? await getGroupDB({ _id: to })
+      : await getUserDB({ _id: to });
+  if (!groupOrUser) return badReq(res, "Invalid 'to' field provided");
   const added = await addExpenseDB({ ...req.body, user: _id, verifiedBy: [_id] });
   if (added) {
     const data = {};
@@ -34,40 +42,48 @@ export const addExpense = handleExceptions(async (req, res) => {
       const totalExpenses = (await totalExpensesDB(new Date(), _id))?.[0]?.amount || 0;
       if (totalExpenses > monthlyLimit) data.message = "You have crossed your monthly expense limit, spend carefully";
     }
-    const pushPayload = {
-      title: "New Expense",
-      body: `${req.auth.name} has added a new expense\n${purpose}\nRs. ${amount}`,
-      imageUrl: images[0] && process.env.BASE_URL + images[0],
-      customData: {
-        type: pushTypes.expenseDetails,
-        data: JSON.stringify({ ...(added._doc || added), user: { name, _id } }),
-        android: JSON.stringify({
-          actions: [
-            { title: "Verify", pressAction: { action: "verify", id: added._id } },
-            { title: "View Details", pressAction: { action: "view", id: added._id } },
-            {
-              title: "Comment",
-              pressAction: { action: "comment", id: added._id },
-              input: {
-                allowFreeFormInput: true,
-                placeholder: "Add a comment",
-              },
-            },
-          ],
-        }),
-      },
-    };
-    if (expenseType === expenseTypes.friend) {
-      const userlogin = ObjectId.isValid(to) && (await getLoginDB({ userId: to }));
-      if (userlogin?.fcmToken) await sendPushNtification(userlogin.fcmToken, pushPayload);
-    } else if (expenseType === expenseTypes.group) {
-      const members = await getLoginsDB({
-        $and: [{ fcmToken: { $ne: "" } }, { userId: { $in: splitedIn } }, { userId: { $ne: _id } }],
-      });
-      for (const user of members || []) {
-        await sendPushNtification(user.fcmToken, pushPayload);
+    if (expenseType !== expenseTypes.own) {
+      const pushPayload = {
+        // title: "New Expense",
+        // body: `${name} has added a new expense\n${purpose}\nRs. ${amount}`,
+        title: `${name} has added a new expense`,
+        body: `<div>${purpose}<br>Rs. ${amount}</div>`,
+        imageUrl: images[0],
+        customData: {
+          subtitle: expenseType === expenseTypes.friend ? "Personal" : `Group • ${groupOrUser.name}`,
+          type: pushTypes.expenseDetails,
+          data: JSON.stringify({ ...(added._doc || added), user: { name, _id } }),
+          android: JSON.stringify({
+            actions: [
+              { title: "Verify", pressAction: { id: `verify/${added._id}` } },
+              { title: "View Details", pressAction: { id: `details/${added._id}`, launchActivity: "default" } },
+              // {
+              //   title: "Comment",
+              //   pressAction: { id: `comment/${added._id}` },
+              //   input: {
+              //     allowFreeFormInput: true,
+              //     placeholder: "Add a comment",
+              //   },
+              // },
+            ],
+          }),
+        },
+      };
+      if (expenseType === expenseTypes.friend) {
+        const userlogin = ObjectId.isValid(to) && (await getLoginDB({ userId: to }));
+        if (userlogin?.fcmToken) await sendPushNtification(userlogin.fcmToken, pushPayload);
+      } else if (expenseType === expenseTypes.group) {
+        const members = await getLoginsDB({
+          $and: [{ fcmToken: { $ne: "" } }, { userId: { $in: splitedIn } }, { userId: { $ne: _id } }],
+        });
+        for (const user of members || []) {
+          await sendPushNtification(user.fcmToken, pushPayload);
+        }
       }
     }
+    if (!req.auth.options.includes(purpose))
+      await editUserDB({ _id: req.auth._id }, { $push: { options: { $each: [purpose], $position: 0 } } });
+
     return rm(res, "Expense added", data, 201);
   }
   return badReq(res, "Unable to save your data !");
@@ -124,24 +140,82 @@ export const deleteExpense = handleExceptions(async (req, res) => {
 });
 
 export const editExpense = handleExceptions(async (req, res) => {
-  const { additional, purpose, to, images = [], amount } = req.body,
-    _id = req.params.id;
-  if (purpose === "Write your own ...") req.body.purpose = additional;
+  const { purpose, to, images = [], amount, expenseType } = req.body,
+    _id = req.params.id,
+    { name, _id: userId } = req.auth;
+
+  const groupOrUser =
+    expenseType === expenseTypes.own
+      ? req.auth
+      : expenseType === expenseTypes.group
+      ? await getGroupDB({ _id: to })
+      : await getUserDB({ _id: to });
+  if (!groupOrUser) return badReq(res, "Invalid 'to' field provided");
 
   // if (!Object.values(expenseTypes).includes(req.body.to))
   //   req.body.to = (await getUserDB({ name: req.body.to }))?._id;
   const prev = await getExpenseDB({ _id }),
     edited = await editExpenseDB({ _id }, { ...req.body, edited: true });
   if (edited) {
-    if (to !== expenseTypes.own)
+    const { expenseType, splitedIn } = edited;
+    if (expenseType !== expenseTypes.own) {
       await addNotificationDB({
-        user: req.auth._id,
+        user: userId,
         group: edited.to,
         amount: edited.amount,
         purpose: edited.purpose,
         prevAmount: prev.amount,
         prevPurpose: prev.purpose,
       });
+      const pushPayload = {
+        // title: "New Expense",
+        // body: `${name} has added a new expense\n${purpose}\nRs. ${amount}`,
+        title: `${name} has updated an expense`,
+        body: `<div>${purpose}<br>Rs. ${amount}</div>`,
+        imageUrl: images[0] || edited.images[0],
+        customData: {
+          subtitle: expenseType === expenseTypes.friend ? "Personal" : `Group • ${groupOrUser.name}`,
+          type: pushTypes.expenseDetails,
+          data: JSON.stringify({ ...(edited._doc || edited), user: { name, _id: userId } }),
+          android: {
+            actions: [
+              // { title: "Verify", pressAction: { id: `verify/${edited._id}` } },
+              { title: "View Details", pressAction: { id: `details/${edited._id}`, launchActivity: "default" } },
+              // {
+              //   title: "Comment",
+              //   pressAction: { id: `comment/${edited._id}` },
+              //   input: {
+              //     allowFreeFormInput: true,
+              //     placeholder: "Add a comment",
+              //   },
+              // },
+            ],
+          },
+        },
+      };
+      if (expenseType === expenseTypes.friend) {
+        if (!edited.verifiedBy.includes(new ObjectId(to))) {
+          pushPayload.customData.android.actions.unshift({ title: "Verify", pressAction: { id: `verify/${edited._id}` } });
+        }
+        pushPayload.customData.android = JSON.stringify(pushPayload.customData.android);
+        const userlogin = ObjectId.isValid(to) && (await getLoginDB({ userId: to }));
+        if (userlogin?.fcmToken) await sendPushNtification(userlogin.fcmToken, pushPayload);
+      } else if (expenseType === expenseTypes.group) {
+        const members = await getLoginsDB({
+          $and: [{ fcmToken: { $ne: "" } }, { userId: { $in: splitedIn } }, { userId: { $ne: _id } }],
+        });
+        for (const user of members || []) {
+          const push = { ...pushPayload };
+          if (!edited.verifiedBy.includes(new ObjectId(user.userId))) {
+            push.customData.android.actions.unshift({ title: "Verify", pressAction: { id: `verify/${edited._id}` } });
+          }
+          push.customData.android = JSON.stringify(push.customData.android);
+          await sendPushNtification(user.fcmToken, push);
+        }
+      }
+    }
+    if (!req.auth.options.includes(purpose))
+      await editUserDB({ _id: req.auth._id }, { $push: { options: { $each: [purpose], $position: 0 } } });
     return rm(res, "Expense updated");
   }
   return badReq(res, "Unable to update your expense");
