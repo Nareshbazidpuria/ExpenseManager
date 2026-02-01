@@ -44,5 +44,7 @@ export const editProfileJoi = {
     hiddenGroups: Joi.array().items(Joi.string()),
     options: Joi.array().items(Joi.string()),
     type: Joi.string().valid("hide", "unhide"),
+    upi: Joi.string().min(8).max(50).allow(""),
+    photo: Joi.string().allow(""),
   }),
 };

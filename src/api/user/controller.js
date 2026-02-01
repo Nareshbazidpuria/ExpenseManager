@@ -7,7 +7,7 @@ export const getMember = handleExceptions(async (req, res) => {
   if (req.auth.secretCode === req.query.secretCode)
     return badReq(res, "You cannot add yourself as a friend, it's your own connection code");
   const member = await getUserDB({ secretCode: req.query.secretCode });
-  if (member) return rm(res, "", { name: member.name, _id: member._id });
+  if (member) return rm(res, "", { name: member.name, _id: member._id, photo: member.photo });
   return badReq(res, "No user found with this connection code");
 });
 
@@ -15,7 +15,7 @@ export const friendList = handleExceptions(async (req, res) => {
   const { name } = req.query,
     filter = { _id: { $in: req.auth.friends } };
   if (name) filter.name = { $regex: name, $options: "i" };
-  const friends = await getUsersDB(filter).select({ name: 1 });
+  const friends = await getUsersDB(filter).select({ name: 1, photo: 1 });
   if (friends?.length) return rm(res, "", friends);
   noContent(res);
 });

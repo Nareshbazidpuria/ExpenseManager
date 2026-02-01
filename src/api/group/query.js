@@ -256,6 +256,7 @@ export const groupsHomeDB = ($match, auth) =>
                       {
                         $project: {
                           name: 1,
+                          photo: 1,
                         },
                       },
                     ],

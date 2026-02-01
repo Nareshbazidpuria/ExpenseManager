@@ -128,6 +128,7 @@ export const settlementFriendsDB = (auth) =>
     {
       $project: {
         name: 1,
+        photo: 1,
         type: expenseTypes.friend,
       },
     },

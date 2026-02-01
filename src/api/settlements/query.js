@@ -50,10 +50,10 @@ export const getSettlementsDB = (filter) =>
     },
     {
       $project: {
-        user: { _id: 1, name: 1, email: 1, phone: 1, profilePic: 1 },
+        user: { _id: 1, name: 1, email: 1, phone: 1, photo: 1 },
         to: 1,
-        friend: { _id: 1, name: 1, email: 1, phone: 1, profilePic: 1 },
-        group: { _id: 1, name: 1, groupPic: 1 },
+        friend: { _id: 1, name: 1, email: 1, phone: 1, photo: 1 },
+        group: { _id: 1, name: 1, photo: 1 },
         upto: 1,
         expenseType: 1,
         data: 1,

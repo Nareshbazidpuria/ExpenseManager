@@ -63,6 +63,7 @@ export const expenseListDB = (filter, own) =>
           {
             $project: {
               name: 1,
+              photo: 1,
             },
           },
         ],
@@ -116,6 +117,7 @@ export const expenseListDB = (filter, own) =>
           {
             $project: {
               name: 1,
+              photo: 1,
             },
           },
         ],
@@ -267,6 +269,7 @@ export const totalTeamDB = (date, auth, to) =>
     {
       $set: {
         name: "$name.name",
+        photo: "$name.photo",
       },
     },
     {
@@ -458,7 +461,7 @@ export const groupSettlementsDB = (filter = {}) =>
         from: "users",
         localField: "users",
         foreignField: "_id",
-        pipeline: [{ $project: { name: 1 } }],
+        pipeline: [{ $project: { name: 1, photo: 1 } }],
         as: "users",
       },
     },
@@ -605,7 +608,7 @@ export const groupTotalsDB = (filter = {}) =>
         from: "users",
         localField: "_id",
         foreignField: "_id",
-        pipeline: [{ $project: { name: 1 } }],
+        pipeline: [{ $project: { name: 1, photo: 1 } }],
         as: "user",
       },
     },
@@ -616,7 +619,7 @@ export const groupTotalsDB = (filter = {}) =>
       $group: {
         _id: null,
         from: { $min: "$from" },
-        members: { $push: { _id: "$user._id", name: "$user.name", amount: "$totalAmount" } },
+        members: { $push: { _id: "$user._id", name: "$user.name", amount: "$totalAmount", photo: "$user.photo" } },
         total: { $sum: "$totalAmount" },
       },
     },
@@ -676,6 +679,7 @@ export const totalPersonalDB = (date, auth, to) =>
     {
       $set: {
         name: "$name.name",
+        photo: "$name.photo",
       },
     },
     {
@@ -866,6 +870,7 @@ export const individualDB = (date, auth) =>
           {
             $project: {
               name: 1,
+              photo: 1,
             },
           },
         ],
