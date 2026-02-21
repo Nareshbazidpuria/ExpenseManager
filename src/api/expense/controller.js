@@ -207,9 +207,9 @@ export const editExpense = handleExceptions(async (req, res) => {
         });
         for (const user of members || []) {
           const push = { ...pushPayload };
-          if (!edited.verifiedBy.includes(new ObjectId(user.userId))) {
-            push.customData.android.actions.unshift({ title: "Verify", pressAction: { id: `verify/${edited._id}` } });
-          }
+          // if (!edited.verifiedBy.includes(new ObjectId(user.userId))) {
+          //   push.customData.android.actions.unshift({ title: "Verify", pressAction: { id: `verify/${edited._id}` } });
+          // }
           push.customData.android = JSON.stringify(push.customData.android);
           await sendPushNtification(user.fcmToken, push);
         }
