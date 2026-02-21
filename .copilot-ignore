@@ -3,5 +3,3 @@ node_modules/
 
 public/images/*
 firebase.json
-
-src/seeder/v3tov4/*
