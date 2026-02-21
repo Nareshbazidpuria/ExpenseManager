@@ -24,6 +24,7 @@ import { sendPushNtification } from "../../utils/firebase";
 import { getLoginDB, getLoginsDB } from "../auth/query";
 import { addSettlementDB } from "../settlements/query";
 import { editUserDB, getUserDB } from "../user/query";
+import { settlementRearrangement } from "./helper";
 
 export const addExpense = handleExceptions(async (req, res) => {
   const { purpose, to, images = [], amount, expenseType, splitedIn = [] } = req.body,
@@ -32,8 +33,8 @@ export const addExpense = handleExceptions(async (req, res) => {
     expenseType === expenseTypes.own
       ? req.auth
       : expenseType === expenseTypes.group
-      ? await getGroupDB({ _id: to })
-      : await getUserDB({ _id: to });
+        ? await getGroupDB({ _id: to })
+        : await getUserDB({ _id: to });
   if (!groupOrUser) return badReq(res, "Invalid 'to' field provided");
   const added = await addExpenseDB({ ...req.body, user: _id, verifiedBy: [_id] });
   if (added) {
@@ -148,8 +149,8 @@ export const editExpense = handleExceptions(async (req, res) => {
     expenseType === expenseTypes.own
       ? req.auth
       : expenseType === expenseTypes.group
-      ? await getGroupDB({ _id: to })
-      : await getUserDB({ _id: to });
+        ? await getGroupDB({ _id: to })
+        : await getUserDB({ _id: to });
   if (!groupOrUser) return badReq(res, "Invalid 'to' field provided");
 
   // if (!Object.values(expenseTypes).includes(req.body.to))
@@ -263,8 +264,9 @@ export const settlements = handleExceptions(async (req, res) => {
 
   if (expenseType === expenseTypes.group) {
     const [data, total] = await Promise.all([groupSettlementsDB(filter), groupTotalsDB(filter)]);
-    if (!data?.[0]?.settlements?.length) return noContent(res);
-    return rm(res, "", { data: data[0].settlements, total: total[0] });
+    const resp = settlementRearrangement(data);
+    if (!resp?.length) return noContent(res);
+    return rm(res, "", { data: resp, total: total[0] });
   } else {
     const data = await friendSettlementsDB(req.auth._id, to);
     if (!data?.[0]) return noContent(res);
@@ -299,13 +301,16 @@ export const settleDown = handleExceptions(async (req, res) => {
       groupTotalsDB(historyFilter),
       getGroupDB({ _id: to }),
     ]);
+
+    const resp = settlementRearrangement(data);
+
     history = {
       expenseType: expenseTypes.group,
       user: req.auth._id,
       upto,
       participants: group?.members,
       to,
-      data: { data: data?.[0]?.settlements, total: total?.[0] },
+      data: { data: resp, total: total?.[0] },
     };
 
     const settled = await editExpensesDB(filter, { setteled: true });

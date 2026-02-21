@@ -333,6 +333,173 @@ export const totalTeamDB = (date, auth, to) =>
     },
   ]);
 
+// export const groupSettlementsDB = (filter = {}) =>
+//   Expense.aggregate([
+//     {
+//       $match: {
+//         expenseType: expenseTypes.group,
+//         setteled: false,
+//         verified: true,
+//         ...filter,
+//       },
+//     },
+//     {
+//       $addFields: {
+//         shareAmount: { $divide: ["$amount", { $size: "$splitedIn" }] },
+//       },
+//     },
+//     {
+//       $unwind: "$splitedIn",
+//     },
+//     {
+//       $project: {
+//         _id: 0,
+//         from: "$splitedIn",
+//         amount: "$shareAmount",
+//         to: "$user",
+//       },
+//     },
+//     {
+//       $match: {
+//         $expr: { $ne: ["$from", "$to"] },
+//       },
+//     },
+//     {
+//       $facet: {
+//         outgoing: [
+//           {
+//             $group: {
+//               _id: "$from",
+//               net: { $sum: "$amount" },
+//             },
+//           },
+//           {
+//             $project: {
+//               _id: 1,
+//               net: { $multiply: ["$net", -1] },
+//             },
+//           },
+//         ],
+//         incoming: [
+//           {
+//             $group: {
+//               _id: "$to",
+//               net: { $sum: "$amount" },
+//             },
+//           },
+//         ],
+//       },
+//     },
+//     {
+//       $project: {
+//         combined: {
+//           $concatArrays: ["$outgoing", "$incoming"],
+//         },
+//       },
+//     },
+//     {
+//       $unwind: "$combined",
+//     },
+//     {
+//       $group: {
+//         _id: "$combined._id",
+//         net: { $sum: "$combined.net" },
+//       },
+//     },
+//     {
+//       $facet: {
+//         creditors: [{ $match: { net: { $gt: 0 } } }, { $sort: { net: -1 } }],
+//         debtors: [{ $match: { net: { $lt: 0 } } }, { $sort: { net: 1 } }],
+//       },
+//     },
+//     // {
+//     //   $project: {
+//     //     settlements: {
+//     //       $function: {
+//     //         body: function (creditors, debtors) {
+//     //           const result = [];
+//     //           let i = 0,
+//     //             j = 0;
+
+//     //           while (i < creditors.length && j < debtors.length) {
+//     //             let credit = creditors[i].net;
+//     //             let debit = -debtors[j].net;
+//     //             let amount = Math.min(credit, debit);
+
+//     //             result.push({
+//     //               from: debtors[j]._id,
+//     //               to: creditors[i]._id,
+//     //               amount: Math.round(amount * 100) / 100,
+//     //             });
+
+//     //             creditors[i].net -= amount;
+//     //             debtors[j].net += amount;
+
+//     //             if (creditors[i].net === 0) i++;
+//     //             if (debtors[j].net === 0) j++;
+//     //           }
+//     //           return result;
+//     //         },
+//     //         args: ["$creditors", "$debtors"],
+//     //         lang: "js",
+//     //       },
+//     //     },
+//     //   },
+//     // },
+//     // {
+//     //   $addFields: {
+//     //     users: {
+//     //       $setUnion: [
+//     //         { $map: { input: "$settlements", as: "s", in: "$$s.from" } },
+//     //         { $map: { input: "$settlements", as: "s", in: "$$s.to" } },
+//     //       ],
+//     //     },
+//     //   },
+//     // },
+//     // {
+//     //   $lookup: {
+//     //     from: "users",
+//     //     localField: "users",
+//     //     foreignField: "_id",
+//     //     pipeline: [{ $project: { name: 1, photo: 1 } }],
+//     //     as: "users",
+//     //   },
+//     // },
+//     // {
+//     //   $addFields: {
+//     //     users: {
+//     //       $arrayToObject: {
+//     //         $map: {
+//     //           input: "$users",
+//     //           as: "u",
+//     //           in: {
+//     //             k: { $toString: "$$u._id" },
+//     //             v: "$$u",
+//     //           },
+//     //         },
+//     //       },
+//     //     },
+//     //   },
+//     // },
+//     // {
+//     //   $addFields: {
+//     //     settlements: {
+//     //       $map: {
+//     //         input: "$settlements",
+//     //         as: "s",
+//     //         in: {
+//     //           from: { $getField: { field: { $toString: "$$s.from" }, input: "$users" } },
+//     //           to: { $getField: { field: { $toString: "$$s.to" }, input: "$users" } },
+//     //           amount: "$$s.amount",
+//     //         },
+//     //       },
+//     //     },
+//     //   },
+//     // },
+//     // {
+//     //   $project: { users: 0 },
+//     // },
+//   ]);
 export const groupSettlementsDB = (filter = {}) =>
   Expense.aggregate([
     {
@@ -413,46 +580,9 @@ export const groupSettlementsDB = (filter = {}) =>
       },
     },
     {
-      $project: {
-        settlements: {
-          $function: {
-            body: function (creditors, debtors) {
-              const result = [];
-              let i = 0,
-                j = 0;
-
-              while (i < creditors.length && j < debtors.length) {
-                let credit = creditors[i].net;
-                let debit = -debtors[j].net;
-                let amount = Math.min(credit, debit);
-
-                result.push({
-                  from: debtors[j]._id,
-                  to: creditors[i]._id,
-                  amount: Math.round(amount * 100) / 100,
-                });
-
-                creditors[i].net -= amount;
-                debtors[j].net += amount;
-
-                if (creditors[i].net === 0) i++;
-                if (debtors[j].net === 0) j++;
-              }
-              return result;
-            },
-            args: ["$creditors", "$debtors"],
-            lang: "js",
-          },
-        },
-      },
-    },
-    {
       $addFields: {
         users: {
-          $setUnion: [
-            { $map: { input: "$settlements", as: "s", in: "$$s.from" } },
-            { $map: { input: "$settlements", as: "s", in: "$$s.to" } },
-          ],
+          $setUnion: [{ $map: { input: "$creditors", as: "s", in: "$$s._id" } }, { $map: { input: "$debtors", as: "s", in: "$$s._id" } }],
         },
       },
     },
@@ -480,24 +610,6 @@ export const groupSettlementsDB = (filter = {}) =>
           },
         },
       },
-    },
-    {
-      $addFields: {
-        settlements: {
-          $map: {
-            input: "$settlements",
-            as: "s",
-            in: {
-              from: { $getField: { field: { $toString: "$$s.from" }, input: "$users" } },
-              to: { $getField: { field: { $toString: "$$s.to" }, input: "$users" } },
-              amount: "$$s.amount",
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: { users: 0 },
     },
   ]);
 
@@ -552,27 +664,90 @@ export const friendSettlementsDB = (you, friend) =>
         },
       },
     },
+    // {
+    //   $project: {
+    //     settlement: {
+    //       $function: {
+    //         body: function (pairs, total, you, friend, fromDate) {
+    //           let yourSpent = 0;
+    //           let friendSpent = 0;
+
+    //           for (const p of pairs) {
+    //             if (String(p.from) === String(you)) yourSpent += p.amount;
+    //             else friendSpent += p.amount;
+    //           }
+    //           const net = yourSpent - friendSpent;
+
+    //           if (net > 0) return { from: you, total, amount: Number(net.toFixed(2)), yourSpent, friendSpent, fromDate };
+    //           if (net < 0) return { from: friend, total, amount: Number(Math.abs(net).toFixed(2)), yourSpent, friendSpent, fromDate };
+
+    //           return {};
+    //         },
+    //         args: ["$pairs", "$total", you, friend, "$fromDate"],
+    //         lang: "js",
+    //       },
+    //     },
+    //   },
+    // },
     {
       $project: {
         settlement: {
-          $function: {
-            body: function (pairs, total, you, friend, fromDate) {
-              let yourSpent = 0;
-              let friendSpent = 0;
-
-              for (const p of pairs) {
-                if (String(p.from) === String(you)) yourSpent += p.amount;
-                else friendSpent += p.amount;
-              }
-              const net = yourSpent - friendSpent;
-
-              if (net > 0) return { from: you, total, amount: Number(net.toFixed(2)), yourSpent, friendSpent, fromDate };
-              if (net < 0) return { from: friend, total, amount: Number(Math.abs(net).toFixed(2)), yourSpent, friendSpent, fromDate };
-
-              return {};
+          $let: {
+            vars: {
+              totals: {
+                $reduce: {
+                  input: "$pairs",
+                  initialValue: {
+                    yourSpent: 0,
+                    friendSpent: 0,
+                  },
+                  in: {
+                    yourSpent: {
+                      $cond: [{ $eq: ["$$this.from", you] }, { $add: ["$$value.yourSpent", "$$this.amount"] }, "$$value.yourSpent"],
+                    },
+                    friendSpent: {
+                      $cond: [{ $ne: ["$$this.from", you] }, { $add: ["$$value.friendSpent", "$$this.amount"] }, "$$value.friendSpent"],
+                    },
+                  },
+                },
+              },
             },
-            args: ["$pairs", "$total", you, friend, "$fromDate"],
-            lang: "js",
+            in: {
+              $let: {
+                vars: {
+                  net: {
+                    $subtract: ["$$totals.yourSpent", "$$totals.friendSpent"],
+                  },
+                },
+                in: {
+                  $cond: [
+                    { $gt: ["$$net", 0] },
+                    {
+                      from: you,
+                      total: "$total",
+                      amount: { $round: ["$$net", 2] },
+                      yourSpent: "$$totals.yourSpent",
+                      friendSpent: "$$totals.friendSpent",
+                      fromDate: "$fromDate",
+                    },
+                    {
+                      $cond: [
+                        { $lt: ["$$net", 0] },
+                        {
+                          from: friend,
+                          total: "$total",
+                          amount: { $round: [{ $abs: "$$net" }, 2] },
+                          yourSpent: "$$totals.yourSpent",
+                          friendSpent: "$$totals.friendSpent",
+                          fromDate: "$fromDate",
+                        },
+                        {}, // net === 0
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
           },
         },
       },
