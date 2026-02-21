@@ -21,6 +21,7 @@ import { getGroupDB } from "../group/query";
 // import { getExpoTokensDB, getUserDB } from "../user/query";
 
 export const addExpense = handleExceptions(async (req, res) => {
+  return badReq(res, "Please use the latest Expense Manager to add expenses !");
   const { additional, purpose } = req.body,
     { _id, monthlyLimit } = req.auth;
   if (purpose === "Write your own ...") req.body.purpose = additional;
@@ -48,10 +49,10 @@ export const expenseList = handleExceptions(async (req, res) => {
     filter = {
       createdAt: {
         $gt: new Date(
-          moment(new Date(date)).tz("Asia/Kolkata").startOf("month")
+          moment(new Date(date)).tz("Asia/Kolkata").startOf("month"),
         ),
         $lte: new Date(
-          moment(new Date(date)).tz("Asia/Kolkata").endOf("month")
+          moment(new Date(date)).tz("Asia/Kolkata").endOf("month"),
         ),
       },
       to: req.query.to || expenseTypes.team,
@@ -62,12 +63,20 @@ export const expenseList = handleExceptions(async (req, res) => {
 });
 
 export const deleteExpense = handleExceptions(async (req, res) => {
+  return badReq(
+    res,
+    "Please use the latest Expense Manager to delete expenses !",
+  );
   if (await deleteExpenseDB({ _id: req.params.id, user: req.auth._id }))
     return res.status(200).send({ message: "Expense Deleted" });
   return res.status(400).send({ message: "Unable to delete !" });
 });
 
 export const editExpense = async (req, res) => {
+  return badReq(
+    res,
+    "Please use the latest Expense Manager to modify expenses !",
+  );
   try {
     if (req.body.purpose === "Write your own ...")
       req.body = { ...req.body, purpose: req.body.additional };
@@ -76,7 +85,7 @@ export const editExpense = async (req, res) => {
     const prev = await getExpenseDB({ _id: req.params.id }),
       edited = await editExpenseDB(
         { _id: req.params.id },
-        { ...req.body, user: req.auth._id, edited: true }
+        { ...req.body, user: req.auth._id, edited: true },
       );
     if (edited) {
       if (req.body.to !== expenseTypes.own)
@@ -101,7 +110,7 @@ export const verifyExpense = async (req, res) => {
   try {
     const verified = await editExpenseDB(
       { _id: req.params.id, user: { $ne: req.auth._id } },
-      { $addToSet: { verifiedBy: req.auth._id } }
+      { $addToSet: { verifiedBy: req.auth._id } },
     );
     if (verified) {
       const group = await getGroupDB({ _id: verified.to });
