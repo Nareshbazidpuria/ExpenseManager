@@ -1177,10 +1177,15 @@ export const monthlyBudgetDB = (date, user) =>
     {
       $project: {
         amount: {
-          $sum: [
-            { $ifNull: [{ $first: "$personal.amount" }, 0] },
-            { $ifNull: [{ $first: "$friends.amount" }, 0] },
-            { $ifNull: [{ $first: "$groups.amount" }, 0] },
+          $round: [
+            {
+              $sum: [
+                { $ifNull: [{ $first: "$personal.amount" }, 0] },
+                { $ifNull: [{ $first: "$friends.amount" }, 0] },
+                { $ifNull: [{ $first: "$groups.amount" }, 0] },
+              ],
+            },
+            2,
           ],
         },
       },
