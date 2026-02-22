@@ -10,7 +10,8 @@ import {
   groupSettlementsDB,
   groupTotalsDB,
   individualDB,
-  totalExpensesDB,
+  monthlyBudgetDB,
+  // totalExpensesDB,
   totalOwnDB,
   totalPersonalDB,
   totalTeamDB,
@@ -43,10 +44,10 @@ export const addExpense = handleExceptions(async (req, res) => {
   const added = await addExpenseDB({ ...req.body, user: _id, verifiedBy: [_id] });
   if (added) {
     const data = {};
-    if (monthlyLimit) {
-      const totalExpenses = (await totalExpensesDB(new Date(), _id))?.[0]?.amount || 0;
-      if (totalExpenses > monthlyLimit) data.message = "You have crossed your monthly expense limit, spend carefully";
-    }
+    // if (monthlyLimit) {
+    //   const totalExpenses = (await totalExpensesDB(new Date(), _id))?.[0]?.amount || 0;
+    //   if (totalExpenses > monthlyLimit) data.message = "You have crossed your monthly expense limit, spend carefully";
+    // }
     if (expenseType !== expenseTypes.own) {
       const pushPayload = {
         // title: "New Expense",
@@ -269,7 +270,7 @@ export const totalTeam = handleExceptions(async (req, res) => {
 
 export const monthlyBudget = handleExceptions(async (req, res) => {
   if (!req.auth.monthlyLimit) return noContent(res);
-  const data = { limit: req.auth.monthlyLimit, spent: (await totalExpensesDB(new Date(), req.auth._id))?.[0]?.amount || 0 };
+  const data = { limit: req.auth.monthlyLimit, spent: (await monthlyBudgetDB(new Date(), req.auth._id))?.[0]?.amount || 0 };
   return rm(res, "", data);
 });
 

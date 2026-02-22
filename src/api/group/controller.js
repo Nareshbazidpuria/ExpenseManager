@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { createGroupDB, editGroupDB, getGroupsDB, groupDetailsDB, groupsDB, groupsHomeDB, settlementGroupsDB } from "./query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { rMsg } from "../../../config/constant";
-import { settlementFriendsDB } from "../user/query";
+import { getUsersDB, settlementFriendsDB } from "../user/query";
 
 export const createGroup = handleExceptions(async (req, res) => {
   console.log(req.body.members);
@@ -23,11 +23,17 @@ export const groupListHome = handleExceptions(async (req, res) => {
 
 export const groupList = handleExceptions(async (req, res) => {
   const filter = { members: { $elemMatch: { $eq: req.auth._id } } },
-    { hiddenGroups } = req.query;
-  if (req.query.hasOwnProperty("hidden")) filter._id = { $nin: req.auth.hiddenGroups || [] };
-  if (hiddenGroups) {
-    const list = await getGroupsDB({ _id: { $in: hiddenGroups } }, ["name"]);
-    return rm(res, "", list || []);
+    { hiddenGroups } = req.query,
+    hidden = req.auth.hiddenGroups || [];
+
+  if (req.query.hasOwnProperty("hidden")) filter._id = { $nin: hidden };
+  if (hiddenGroups === "true") {
+    const list = (await getGroupsDB({ _id: { $in: hidden } }, ["name"])) || [];
+    if (list?.length !== hidden.length) {
+      const users = await getUsersDB({ _id: { $in: hidden } }, ["name"]);
+      list.push(...(users || []));
+    }
+    return rm(res, "", list);
   }
   const list = await groupsDB(filter, req.auth._id);
   rm(res, "", list || []);

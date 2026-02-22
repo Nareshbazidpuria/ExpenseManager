@@ -8,7 +8,7 @@ import { ObjectId } from "mongodb";
 import { sendEmail } from "../../utils/mailer";
 import { readFileSync } from "fs";
 import { jwtDecode } from "jwt-decode";
-import { totalExpensesDB } from "../expense/query";
+import { monthlyBudgetDB } from "../expense/query";
 
 export const signUp = handleExceptions(async (req, res) => {
   const email = req.body.email.trim()?.toLowerCase();
@@ -52,7 +52,7 @@ export const profile = handleExceptions(async (req, res) => {
         },
       ])
     )?.[0]?.count || 0;
-  user.totalExpenses = user.monthlyLimit ? (await totalExpensesDB(new Date(), req.auth._id))?.[0]?.amount || 0 : 0;
+  user.totalExpenses = user.monthlyLimit ? (await monthlyBudgetDB(new Date(), req.auth._id))?.[0]?.amount || 0 : 0;
   return rm(res, "", user);
 });
 
@@ -60,7 +60,7 @@ export const updateProfile = handleExceptions(async (req, res) => {
   const { hiddenGroups, type } = req.body;
   if (type === "hide") {
     const updated = await editUserDB({ _id: req.auth._id }, { $addToSet: { hiddenGroups } });
-    if (updated) return rm(res, "Groups have been hidden, you can unhide them from my profile");
+    if (updated) return rm(res, "Expenses have been hidden, you can unhide them from my profile");
   } else if (type === "unhide") {
     const updated = await editUserDB({ _id: req.auth._id }, { hiddenGroups });
     if (updated) return rm(res, "");
@@ -90,7 +90,7 @@ export const forgotPassword = handleExceptions(async (req, res) => {
       otp,
       email,
       expirationTime: new Date().setMinutes(new Date().getMinutes() + 10),
-    })
+    }),
   );
   return rm(res, rMsg.OTP_SENT, token);
 });

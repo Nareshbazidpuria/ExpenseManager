@@ -191,7 +191,7 @@ export const groupsHomeDB = ($match, auth) =>
           {
             $match: {
               friends: { $elemMatch: { $eq: auth._id } },
-              _id: { $ne: auth._id },
+              $and: [{ _id: { $ne: auth._id } }, { _id: { $not: { $in: auth.hiddenGroups } } }],
             },
           },
           {
@@ -215,6 +215,7 @@ export const groupsHomeDB = ($match, auth) =>
                     $expr: {
                       $in: [auth._id, "$members"],
                     },
+                    _id: { $not: { $in: auth.hiddenGroups } },
                   },
                 },
                 {

@@ -1083,7 +1083,30 @@ export const individualDB = (date, auth) =>
     },
   ]);
 
-export const totalExpensesDB = (date, user) =>
+// export const totalExpensesDB = (date, user) =>
+//   Expense.aggregate([
+//     {
+//       $match: {
+//         createdAt: {
+//           $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
+//           $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
+//         },
+//         user,
+//       },
+//     },
+//     {
+//       $group: {
+//         _id: null,
+//         amount: {
+//           $sum: {
+//             $ifNull: ["$amount", 0],
+//           },
+//         },
+//       },
+//     },
+//   ]);
+
+export const monthlyBudgetDB = (date, user) =>
   Expense.aggregate([
     {
       $match: {
@@ -1091,16 +1114,74 @@ export const totalExpensesDB = (date, user) =>
           $gt: new Date(momentTz(date).tz("Asia/Kolkata").startOf("month")),
           $lte: new Date(momentTz(date).tz("Asia/Kolkata").endOf("month")),
         },
-        user,
       },
     },
     {
-      $group: {
-        _id: null,
-        amount: {
-          $sum: {
-            $ifNull: ["$amount", 0],
+      $facet: {
+        personal: [
+          {
+            $match: {
+              user,
+              expenseType: expenseTypes.own,
+            },
           },
+          {
+            $group: {
+              _id: null,
+              amount: {
+                $sum: {
+                  $ifNull: ["$amount", 0],
+                },
+              },
+            },
+          },
+        ],
+        friends: [
+          {
+            $match: {
+              $or: [{ user }, { to: user?.toString() }],
+              expenseType: expenseTypes.friend,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              amount: {
+                $sum: {
+                  $cond: [{ $eq: ["$user", user] }, { $subtract: ["$amount", "$splitedAmount"] }, { $ifNull: ["$splitedAmount", 0] }],
+                },
+              },
+            },
+          },
+        ],
+        groups: [
+          {
+            $match: {
+              splitedIn: user,
+              expenseType: expenseTypes.group,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              amount: {
+                $sum: {
+                  $divide: ["$amount", { $size: "$splitedIn" }],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      $project: {
+        amount: {
+          $sum: [
+            { $ifNull: [{ $first: "$personal.amount" }, 0] },
+            { $ifNull: [{ $first: "$friends.amount" }, 0] },
+            { $ifNull: [{ $first: "$groups.amount" }, 0] },
+          ],
         },
       },
     },
