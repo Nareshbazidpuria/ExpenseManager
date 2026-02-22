@@ -29,12 +29,16 @@ import { settlementRearrangement } from "./helper";
 export const addExpense = handleExceptions(async (req, res) => {
   const { purpose, to, images = [], amount, expenseType, splitedIn = [] } = req.body,
     { _id, monthlyLimit, name } = req.auth;
+
+  const user = JSON.parse(JSON.stringify(req.auth));
+  delete user.password;
+
   const groupOrUser =
     expenseType === expenseTypes.own
       ? req.auth
       : expenseType === expenseTypes.group
         ? await getGroupDB({ _id: to })
-        : await getUserDB({ _id: to });
+        : await getUserDB({ _id: to }, { password: 0 });
   if (!groupOrUser) return badReq(res, "Invalid 'to' field provided");
   const added = await addExpenseDB({ ...req.body, user: _id, verifiedBy: [_id] });
   if (added) {
@@ -53,7 +57,11 @@ export const addExpense = handleExceptions(async (req, res) => {
         customData: {
           subtitle: expenseType === expenseTypes.friend ? "Personal" : `Group • ${groupOrUser.name}`,
           type: pushTypes.expenseDetails,
-          data: JSON.stringify({ ...(added._doc || added), user: { name, _id } }),
+          data: JSON.stringify({
+            ...(added._doc || added),
+            user: { name, _id },
+            groupOrUser: expenseType === expenseTypes.friend ? user : groupOrUser,
+          }),
           android: JSON.stringify({
             actions: [
               { title: "Verify", pressAction: { id: `verify/${added._id}` } },
@@ -145,12 +153,15 @@ export const editExpense = handleExceptions(async (req, res) => {
     _id = req.params.id,
     { name, _id: userId } = req.auth;
 
+  const user = JSON.parse(JSON.stringify(req.auth));
+  delete user.password;
+
   const groupOrUser =
     expenseType === expenseTypes.own
       ? req.auth
       : expenseType === expenseTypes.group
         ? await getGroupDB({ _id: to })
-        : await getUserDB({ _id: to });
+        : await getUserDB({ _id: to }, { password: 0 });
   if (!groupOrUser) return badReq(res, "Invalid 'to' field provided");
 
   // if (!Object.values(expenseTypes).includes(req.body.to))
@@ -177,7 +188,11 @@ export const editExpense = handleExceptions(async (req, res) => {
         customData: {
           subtitle: expenseType === expenseTypes.friend ? "Personal" : `Group • ${groupOrUser.name}`,
           type: pushTypes.expenseDetails,
-          data: JSON.stringify({ ...(edited._doc || edited), user: { name, _id: userId } }),
+          data: JSON.stringify({
+            ...(edited._doc || edited),
+            user: { name, _id: userId },
+            groupOrUser: expenseType === expenseTypes.friend ? user : groupOrUser,
+          }),
           android: {
             actions: [
               // { title: "Verify", pressAction: { id: `verify/${edited._id}` } },

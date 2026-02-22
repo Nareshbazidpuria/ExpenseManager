@@ -3,7 +3,7 @@ import { User } from "./model";
 import { expenseTypes } from "../../../config/constant";
 
 export const addUserDB = (user) => User.create(user);
-export const getUserDB = (filter) => User.findOne(filter);
+export const getUserDB = (filter, projection) => User.findOne(filter, projection);
 export const getUsersDB = (filter) => User.find(filter);
 
 export const editUserDB = (filter, updation) => User.findOneAndUpdate(filter, updation, { new: true });

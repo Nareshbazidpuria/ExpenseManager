@@ -9,7 +9,6 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
  * @param {object} data - notification data { title, body, image?, [customData] }
  */
 export const sendPushNtification = async (token, data = {}) => {
-  console.log(token, JSON.stringify(data));
   const { title, body, imageUrl, customData = {}, android = {} } = data;
   // if (imageUrl) customData.imageUrl = imageUrl;
   customData.title = title;
