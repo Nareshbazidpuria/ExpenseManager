@@ -48,7 +48,7 @@ export const addExpense = handleExceptions(async (req, res) => {
         // title: "New Expense",
         // body: `${name} has added a new expense\n${purpose}\nRs. ${amount}`,
         title: `${name} has added a new expense`,
-        body: `<div>${purpose}<br>Rs. ${amount}</div>`,
+        body: `<div><strong>₹${amount}</strong> • ${purpose}</div>`,
         imageUrl: images[0],
         customData: {
           subtitle: expenseType === expenseTypes.friend ? "Personal" : `Group • ${groupOrUser.name}`,
@@ -172,7 +172,7 @@ export const editExpense = handleExceptions(async (req, res) => {
         // title: "New Expense",
         // body: `${name} has added a new expense\n${purpose}\nRs. ${amount}`,
         title: `${name} has updated an expense`,
-        body: `<div>${purpose}<br>Rs. ${amount}</div>`,
+        body: `<div><strong>₹${amount}</strong> • ${purpose}</div>`,
         imageUrl: images[0] || edited.images[0],
         customData: {
           subtitle: expenseType === expenseTypes.friend ? "Personal" : `Group • ${groupOrUser.name}`,

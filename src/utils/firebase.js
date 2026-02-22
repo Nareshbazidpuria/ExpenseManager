@@ -1,5 +1,3 @@
-// const admin = require("firebase-admin");
-// const serviceAccount = require("./serviceAccountKey.json"); // path to your file
 import admin from "firebase-admin";
 import serviceAccount from "../../firebase.json";
 
@@ -11,8 +9,9 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
  * @param {object} data - notification data { title, body, image?, [customData] }
  */
 export const sendPushNtification = async (token, data = {}) => {
+  console.log(token, JSON.stringify(data));
   const { title, body, imageUrl, customData = {}, android = {} } = data;
-  if (imageUrl) customData.imageUrl = imageUrl;
+  // if (imageUrl) customData.imageUrl = imageUrl;
   customData.title = title;
   customData.body = body;
 
@@ -21,7 +20,7 @@ export const sendPushNtification = async (token, data = {}) => {
       token,
       // notification: { title, body, imageUrl },
       data: customData,
-      android: { priority: "high", notification: { sound: "default" }, ...android },
+      android: { priority: "high", ...android },
       apns: { payload: { aps: { sound: "default" } } },
     });
     console.log("✅ Notification sent successfully:");
