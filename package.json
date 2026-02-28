@@ -24,6 +24,7 @@
     "express": "^4.19.1",
     "express-validation": "^4.1.0",
     "firebase-admin": "^13.4.0",
+    "googleapis": "^171.4.0",
     "joi-objectid": "^4.0.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
