@@ -1,7 +1,7 @@
 import { createTransport } from "nodemailer";
 
 export const sendEmail = (payload) => {
-  const { to, subject, text, html, attachments } = payload;
+  // const { to, subject, text, html, attachments } = payload;
   const transporter = createTransport({
     service: process.env.MAILER_SERVICE,
     auth: {
@@ -13,14 +13,17 @@ export const sendEmail = (payload) => {
   return new Promise((resolve) => {
     transporter.sendMail(
       {
-        from: `Support Expense Manager <${process.env.MAILER_USER}>`,
-        to,
-        text,
-        html,
-        subject,
-        attachments,
+        from: `Expense Manager <${process.env.MAILER_USER}>`,
+        ...payload,
       },
-      (error, info) => (error ? resolve() : resolve(info))
+      (error, info) => {
+        if (error) {
+          console.log("mailer error : ", error);
+          resolve({ error });
+        } else {
+          resolve({ info });
+        }
+      },
     );
   });
 };

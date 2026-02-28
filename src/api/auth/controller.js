@@ -4,7 +4,6 @@ import { getUserDB, addUserDB, editUserDB } from "../user/query";
 import { logoutDB, loginDB, logoutAllDB } from "./query";
 import { rMsg } from "../../../config/constant";
 import { notificationListDB } from "../notifications/query";
-import { ObjectId } from "mongodb";
 import { sendEmail } from "../../utils/mailer";
 import { readFileSync } from "fs";
 import { jwtDecode } from "jwt-decode";
@@ -79,11 +78,7 @@ export const forgotPassword = handleExceptions(async (req, res) => {
   let html = readFileSync("public/templates/forgotPassword.html", "utf8");
   html = html.replace("{{otp}}", otp);
   html = html.replace("{{name}}", user?.name);
-  const mailSent = await sendEmail({
-    to: email,
-    subject: "Reset your password",
-    html,
-  });
+  const { info: mailSent } = await sendEmail({ to: email, subject: "Reset your password", html });
   if (!mailSent) return badReq(res, "Something went wrong");
   const token = encrypt(
     generateToken({
