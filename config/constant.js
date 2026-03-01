@@ -60,3 +60,10 @@ export const expenseTags = {
   verified: "verified",
   notVerified: "notVerified",
 };
+
+export const collectionNames = {
+  users: "users",
+  groups: "groups",
+  expenses: "expenses",
+  insights: "insights",
+};
