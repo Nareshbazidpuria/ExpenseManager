@@ -115,6 +115,7 @@ export const expenseList = handleExceptions(async (req, res) => {
       { to, user: req.auth._id },
     ];
   } else if (expenseType === expenseTypes.own) filter.user = req.auth._id;
+  else if (expenseType === expenseTypes.group) filter.splitedIn = { $elemMatch: { $eq: req.auth._id } };
   const list = await expenseListDB(filter, expenseType === expenseTypes.own);
   return rm(res, "", list);
 });
