@@ -15,6 +15,7 @@ const schema = new Schema(
     personalTransactions: Number,
     byYouTransactions: Number,
     byOthersTransactions: Number,
+    dailyAvg: Number,
     verified: {
       type: Boolean,
       default: false,

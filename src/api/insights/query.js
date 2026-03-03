@@ -3,7 +3,9 @@ import { Insights } from "./model";
 import momentTz from "moment-timezone";
 import { expenseTypes } from "../../../config/constant";
 
+export const addInsightsQuery = (data) => Insights.create(data);
 export const monthlyInsightsQuery = (filter) => Insights.findOne(filter);
+export const getInsightsQuery = (filter) => Insights.find(filter);
 
 export const monthlyExpensesQuery = (date, user) =>
   Expense.aggregate([
