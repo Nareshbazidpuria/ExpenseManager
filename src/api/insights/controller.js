@@ -5,8 +5,9 @@ import { generateMonthlyTrends } from "./helper";
 
 export const topCards = handleExceptions(async (req, res) => {
   // const date = momentTz("2/28/2026"); // todo - dynamic filter and timezone and keep separate API
-  const date = momentTz(); // todo - dynamic filter
-  const previousMonth = momentTz(date).subtract(1, "month").startOf("month").toDate();
+  const tz = "Asia/Kolkata";
+  const date = momentTz().tz(tz); // todo - dynamic filter
+  const previousMonth = momentTz(date).tz(tz).subtract(1, "month").startOf("month").toDate();
   const user = req.auth._id;
   const [expenses, previous, trends, monthlyInsights] = await Promise.all([
     monthlyExpensesQuery(date.toDate(), user),
@@ -15,8 +16,8 @@ export const topCards = handleExceptions(async (req, res) => {
     getInsightsQuery({
       user,
       month: {
-        $gte: momentTz(date).startOf("year").toDate(),
-        $lte: momentTz(date).endOf("year").toDate(),
+        $gte: momentTz(date).tz(tz).startOf("year").toDate(),
+        $lte: momentTz(date).tz(tz).endOf("year").toDate(),
       },
     }),
   ]);
@@ -28,7 +29,7 @@ export const topCards = handleExceptions(async (req, res) => {
       totalTransactions: expenses?.[0]?.totalTransactions || 0,
       month: date.toDate(),
       dailyAvg: expenses?.[0]?.totalAmount / date.date(),
-      timezone: date.tz(),
+      timezone: tz,
       verified: true,
     },
   ];
