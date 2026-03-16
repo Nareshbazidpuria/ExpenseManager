@@ -74,34 +74,34 @@ export const expenseListDB = (filter, own) =>
       $unwind: "$user",
     },
     ...groupLookup(own),
-    {
-      $set: {
-        verified: {
-          $cond: [
-            own,
-            true,
-            {
-              $cond: [
-                {
-                  $eq: [
-                    {
-                      $size: "$verifiedBy",
-                    },
-                    {
-                      $size: {
-                        $ifNull: ["$group.members", [1, 2]], // for friends , todo manages it
-                      },
-                    },
-                  ],
-                },
-                true,
-                false,
-              ],
-            },
-          ],
-        },
-      },
-    },
+    // {
+    //   $set: {
+    //     verified: {
+    //       $cond: [
+    //         own,
+    //         true,
+    //         {
+    //           $cond: [
+    //             {
+    //               $eq: [
+    //                 {
+    //                   $size: "$verifiedBy",
+    //                 },
+    //                 {
+    //                   $size: {
+    //                     $ifNull: ["$group.members", [1, 2]], // for friends , todo manages it
+    //                   },
+    //                 },
+    //               ],
+    //             },
+    //             true,
+    //             false,
+    //           ],
+    //         },
+    //       ],
+    //     },
+    //   },
+    // },
     {
       $lookup: {
         from: "users",
