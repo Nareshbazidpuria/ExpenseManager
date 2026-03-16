@@ -250,8 +250,9 @@ export const verifyExpense = handleExceptions(async (req, res) => {
   const updates = { $addToSet: { verifiedBy: req.auth._id } };
   if (expense.expenseType === expenseTypes.friend) updates.$set = { verified: true };
   else {
-    const group = await getGroupDB({ _id: expense.to });
-    if (group?.members?.length - 1 === expense.verifiedBy.length) updates.$set = { verified: true };
+    if (expense.splitedIn.every((id) => [...expense.verifiedBy, req.auth._id].map((_id) => String(_id)).includes(id.toString()))) {
+      updates.$set = { verified: true };
+    }
   }
 
   const verified = await editExpenseDB({ _id, user: { $ne: req.auth._id } }, updates);
