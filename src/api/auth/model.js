@@ -7,7 +7,7 @@ export const Auth = model(
     {
       userId: ObjectId,
       accessToken: String,
-      expoToken: String,
+      fcmToken: String,
     },
     { timestamps: true }
   )

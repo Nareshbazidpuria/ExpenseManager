@@ -7,15 +7,10 @@ export const rm = (res, message, data = {}, status = 200) =>
     data,
   });
 
-export const badReq = (res, message = "Something went wrong") =>
-  res?.status(400)?.send({ message });
-
+export const badReq = (res, message = "Something went wrong", key) => res?.status(400)?.send({ message, key });
 export const conflict = (res, message) => res?.status(409)?.send({ message });
-
 export const noContent = (res) => res?.status(204)?.send();
-
-export const res500 = (res) =>
-  res?.status(500)?.send({ message: rMsg.INTERNAL_SERVER_ERROR });
+export const res500 = (res) => res?.status(500)?.send({ message: rMsg.INTERNAL_SERVER_ERROR });
 
 export const handleExceptions =
   (fn) =>
@@ -28,11 +23,9 @@ export const handleExceptions =
     }
   };
 
-export const capitalize = (str = "") =>
-  str.charAt(0).toUpperCase() + str.slice(1);
+export const capitalize = (str = "") => str.charAt(0).toUpperCase() + str.slice(1);
 
-export const randomString = () =>
-  Math.random().toString(36).slice(2).toUpperCase();
+export const randomString = () => Math.random().toString(36).slice(2).toUpperCase();
 
 export const genSecretCode = async () => {
   const secretCode = Math.random().toString(36).slice(2).toUpperCase();
@@ -41,22 +34,16 @@ export const genSecretCode = async () => {
   return secretCode;
 };
 
-export const formatMsg = (msg) => {
-  if (msg[0] === '"') {
-    return msg
-      .split(msg.slice(msg.indexOf('"'), msg.lastIndexOf('"') + 1))
-      .join(capitalize(msg.slice(msg.indexOf('"') + 1, msg.lastIndexOf('"'))));
-  }
-};
+export const formatMsg = (msg = "") =>
+  msg[0] === '"'
+    ? msg
+        .split(msg.slice(msg.indexOf('"'), msg.lastIndexOf('"') + 1))
+        .join(capitalize(msg.slice(msg.indexOf('"') + 1, msg.lastIndexOf('"'))))
+    : msg;
 
 export const toMsg = (res, err) =>
   err?.details?.body?.length || err?.details?.query?.length
-    ? rm(
-        res,
-        formatMsg((err?.details?.body || err?.details?.query)[0]?.message),
-        {},
-        err?.statusCode
-      )
+    ? rm(res, formatMsg((err?.details?.body || err?.details?.query)[0]?.message), {}, err?.statusCode)
     : badReq(res, "Validation error");
 
 export const generateOtp = () => {

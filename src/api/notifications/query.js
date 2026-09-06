@@ -3,11 +3,9 @@ import { Notification } from "./model";
 
 export const addNotificationDB = (data) => Notification.create(data);
 
-export const editNotificationDB = (filter, updation) =>
-  Notification.findOneAndUpdate(filter, updation, { new: true });
+export const editNotificationDB = (filter, updation) => Notification.findOneAndUpdate(filter, updation, { new: true });
 
-export const editNotificationsDB = (filter, updation) =>
-  Notification.updateMany(filter, updation, { new: true });
+export const editNotificationsDB = (filter, updation) => Notification.updateMany(filter, updation, { new: true });
 
 export const notificationListDB = (user, stages = []) =>
   Group.aggregate([

@@ -10,6 +10,20 @@ export const User = model(
       email: String,
       monthlyLimit: Number,
       hiddenGroups: [Schema.ObjectId],
+      options: {
+        type: [String],
+        default: [
+          "Grocery",
+          "Entertainment",
+          "Bills",
+          "Health",
+          "Travel",
+          "Other",
+        ],
+      },
+      photo: String,
+      upi: String,
+      friends: [Schema.ObjectId],
     },
     { timestamps: true }
   )

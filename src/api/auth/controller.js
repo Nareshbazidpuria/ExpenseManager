@@ -1,27 +1,13 @@
-import {
-  comparePassword,
-  decrypt,
-  encrypt,
-  generateToken,
-  hashPassword,
-} from "../../utils/bcrypt";
-import {
-  badReq,
-  conflict,
-  genSecretCode,
-  generateOtp,
-  handleExceptions,
-  rm,
-} from "../../utils/common";
+import { comparePassword, decrypt, encrypt, generateToken, hashPassword } from "../../utils/bcrypt";
+import { badReq, conflict, genSecretCode, generateOtp, handleExceptions, rm } from "../../utils/common";
 import { getUserDB, addUserDB, editUserDB } from "../user/query";
 import { logoutDB, loginDB, logoutAllDB } from "./query";
 import { rMsg } from "../../../config/constant";
 import { notificationListDB } from "../notifications/query";
-import { ObjectId } from "mongodb";
 import { sendEmail } from "../../utils/mailer";
 import { readFileSync } from "fs";
 import { jwtDecode } from "jwt-decode";
-import { totalExpensesDB } from "../expense/query";
+import { monthlyBudgetDB } from "../expense/query";
 
 export const signUp = handleExceptions(async (req, res) => {
   const email = req.body.email.trim()?.toLowerCase();
@@ -38,15 +24,12 @@ export const signUp = handleExceptions(async (req, res) => {
 
 export const login = handleExceptions(async (req, res) => {
   const user = await getUserDB({ email: req.body.email.trim()?.toLowerCase() });
-  if (!user) return badReq(res, rMsg.USER_NOT_FOUND);
-  if (!(await comparePassword(req.body.password, user.password)))
-    return badReq(res, rMsg.INCORRECT_PASSWORD);
+  if (!user) return badReq(res, rMsg.USER_NOT_FOUND, "email");
+  if (!(await comparePassword(req.body.password, user.password))) return badReq(res, rMsg.INCORRECT_PASSWORD, "password");
   const accessToken = generateToken({ userId: user._id });
-  if (!(await loginDB({ userId: user._id, accessToken }))) return badReq(res);
-  return rm(res, rMsg.LOGIN_SUCCESS, {
-    accessToken,
-    user: { name: user.name, _id: user._id },
-  });
+  const loggedIn = await loginDB({ userId: user._id, accessToken, fcmToken: req.body.fcmToken || "" });
+  if (!loggedIn) return badReq(res);
+  return rm(res, rMsg.LOGIN_SUCCESS, { accessToken, user });
 });
 
 export const logout = handleExceptions(async (req, res) => {
@@ -68,24 +51,15 @@ export const profile = handleExceptions(async (req, res) => {
         },
       ])
     )?.[0]?.count || 0;
-  user.totalExpenses = user.monthlyLimit
-    ? (await totalExpensesDB(new Date(), req.auth._id))?.[0]?.amount || 0
-    : 0;
+  user.totalExpenses = user.monthlyLimit ? (await monthlyBudgetDB(new Date(), req.auth._id))?.[0]?.amount || 0 : 0;
   return rm(res, "", user);
 });
 
 export const updateProfile = handleExceptions(async (req, res) => {
   const { hiddenGroups, type } = req.body;
   if (type === "hide") {
-    const updated = await editUserDB(
-      { _id: req.auth._id },
-      { $addToSet: { hiddenGroups } }
-    );
-    if (updated)
-      return rm(
-        res,
-        "Groups have been hidden, you can unhide them from my profile"
-      );
+    const updated = await editUserDB({ _id: req.auth._id }, { $addToSet: { hiddenGroups } });
+    if (updated) return rm(res, "Expenses have been hidden, you can unhide them from my profile");
   } else if (type === "unhide") {
     const updated = await editUserDB({ _id: req.auth._id }, { hiddenGroups });
     if (updated) return rm(res, "");
@@ -104,26 +78,21 @@ export const forgotPassword = handleExceptions(async (req, res) => {
   let html = readFileSync("public/templates/forgotPassword.html", "utf8");
   html = html.replace("{{otp}}", otp);
   html = html.replace("{{name}}", user?.name);
-  const mailSent = await sendEmail({
-    to: email,
-    subject: "Reset your password",
-    html,
-  });
+  const { info: mailSent } = await sendEmail({ to: email, subject: "Reset your password", html });
   if (!mailSent) return badReq(res, "Something went wrong");
   const token = encrypt(
     generateToken({
       otp,
       email,
       expirationTime: new Date().setMinutes(new Date().getMinutes() + 10),
-    })
+    }),
   );
   return rm(res, rMsg.OTP_SENT, token);
 });
 
 export const setPassword = handleExceptions(async (req, res) => {
   const token = jwtDecode(decrypt(req.body.token));
-  if (new Date(token.expirationTime) < new Date())
-    return badReq(res, rMsg.OTP_EXPIRED);
+  if (new Date(token.expirationTime) < new Date()) return badReq(res, rMsg.OTP_EXPIRED);
   else if (token.otp != req.body.otp) return badReq(res, rMsg.INVALID_OTP);
   const password = await hashPassword(req.body.password);
   const updated = await editUserDB({ email: token.email }, { password });

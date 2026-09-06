@@ -1,15 +1,11 @@
 import { ObjectId } from "mongodb";
-import {
-  createGroupDB,
-  editGroupDB,
-  getGroupsDB,
-  groupDetailsDB,
-  groupsDB,
-} from "./query";
+import { createGroupDB, editGroupDB, getGroupsDB, groupDetailsDB, groupsDB, groupsHomeDB, settlementGroupsDB } from "./query";
 import { badReq, handleExceptions, rm } from "../../utils/common";
 import { rMsg } from "../../../config/constant";
+import { getUsersDB, settlementFriendsDB } from "../user/query";
 
 export const createGroup = handleExceptions(async (req, res) => {
+  console.log(req.body.members);
   const created = await createGroupDB({
     ...req.body,
     members: [...req.body.members, req.auth._id],
@@ -19,17 +15,33 @@ export const createGroup = handleExceptions(async (req, res) => {
   return badReq(res);
 });
 
+export const groupListHome = handleExceptions(async (req, res) => {
+  const filter = {};
+  const list = await groupsHomeDB(filter, req.auth);
+  rm(res, "", list || []);
+});
+
 export const groupList = handleExceptions(async (req, res) => {
   const filter = { members: { $elemMatch: { $eq: req.auth._id } } },
-    { hiddenGroups } = req.query;
-  if (req.query.hasOwnProperty("hidden"))
-    filter._id = { $nin: req.auth.hiddenGroups || [] };
-  if (hiddenGroups) {
-    const list = await getGroupsDB({ _id: { $in: hiddenGroups } }, ["name"]);
-    return rm(res, "", list || []);
+    { hiddenGroups } = req.query,
+    hidden = req.auth.hiddenGroups || [];
+
+  if (req.query.hasOwnProperty("hidden")) filter._id = { $nin: hidden };
+  if (hiddenGroups === "true") {
+    const list = (await getGroupsDB({ _id: { $in: hidden } }, ["name"])) || [];
+    if (list?.length !== hidden.length) {
+      const users = await getUsersDB({ _id: { $in: hidden } }, ["name"]);
+      list.push(...(users || []));
+    }
+    return rm(res, "", list);
   }
   const list = await groupsDB(filter, req.auth._id);
   rm(res, "", list || []);
+});
+
+export const settlementList = handleExceptions(async (req, res) => {
+  const [groups, friends] = await Promise.all([settlementGroupsDB(req.auth._id), settlementFriendsDB(req.auth)]);
+  rm(res, "", [...(groups || []), ...(friends || [])]);
 });
 
 export const groupDetails = handleExceptions(async (req, res) => {

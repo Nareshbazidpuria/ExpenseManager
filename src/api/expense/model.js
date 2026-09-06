@@ -9,6 +9,13 @@ export const Expense = model(
       amount: Number,
       additional: String,
       to: String,
+      expenseType: String,
+      splitedIn: [ObjectId],
+      splitedAmount: Number,
+      setteled: {
+        type: Boolean,
+        default: false,
+      },
       verified: {
         type: Boolean,
         default: false,
@@ -22,6 +29,7 @@ export const Expense = model(
         type: Boolean,
         default: false,
       },
+      images: [String],
     },
     { timestamps: true }
   )

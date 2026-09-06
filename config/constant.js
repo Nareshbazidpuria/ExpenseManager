@@ -45,5 +45,25 @@ export const rMsg = {
 
 export const expenseTypes = {
   own: "own",
-  team: "team",
+  team: "team", // todo remove
+  friend: "friend",
+  group: "group",
+};
+
+export const pushTypes = {
+  expenseDetails: "expenseDetails",
+};
+
+export const expenseTags = {
+  me: "me",
+  other: "other",
+  verified: "verified",
+  notVerified: "notVerified",
+};
+
+export const collectionNames = {
+  users: "users",
+  groups: "groups",
+  expenses: "expenses",
+  insights: "insights",
 };

@@ -12,6 +12,7 @@ export const loginJoi = {
   body: Joi.object({
     email: Joi.string().required(),
     password: Joi.string().required(),
+    fcmToken: Joi.string().allow(""),
   }),
 };
 
@@ -41,6 +42,9 @@ export const editProfileJoi = {
     name: Joi.string().min(3).max(20),
     monthlyLimit: Joi.number().positive().allow(0),
     hiddenGroups: Joi.array().items(Joi.string()),
+    options: Joi.array().items(Joi.string()),
     type: Joi.string().valid("hide", "unhide"),
+    upi: Joi.string().min(8).max(50).allow(""),
+    photo: Joi.string().allow(""),
   }),
 };

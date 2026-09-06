@@ -7,15 +7,12 @@ const express = require("express"),
   port = process.env.PORT,
   cors = require("cors"),
   { connectToDB } = require("./config/db"),
-  { mainRoutes } = require("./src/routes/main"),
-  { keepAlive } = require("./src/utils/cron");
+  { mainRoutes } = require("./src/routes/main");
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-
-keepAlive();
 
 app.use("/", mainRoutes);
 
